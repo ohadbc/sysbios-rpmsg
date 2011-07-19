@@ -1,0 +1,10 @@
+*.patch
+*.tar
+*.gz
+*.zip
+Make.log
+*patch*
+.generated_files
+.imports
+.imports.xml
+.tools-*

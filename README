@@ -1,0 +1,100 @@
+                               SYS/BIOS RPMSG
+
+This tree contains alternative IPC transports and Notify mechanisms.
+
+It also contains a .bin firmware generator tool in utils, for the purpose
+of generating a simple binary file that gets loaded to a core through the
+Android Linux "SysLink 3.0" firmware loader.  The format of the .bin firmware
+file is proprietary.
+
+CLONE
+    o From Linux workstation, in directory where cloned tree will reside:
+
+        /* Clone the 'sysbios-rpmsg' repository */
+        git clone git://git.omapzoom.org/platform/hardware/ti/sysbios-rpmsg.git
+
+        /* Go into the newly cloned repository */
+        cd sysbios-rpmsg
+
+        /* Switch to the latest branch */
+        git checkout -b mymaster remotes/origin/master
+
+
+TOOLS
+    o Gollum build requires the following tools to be installed at the minimum:
+        - SYS/BIOS: RTOS running on the target slave processor
+        - XDC: RTSC tools used for building and configuration of images
+        - IPC: Base Inter-Processor Communication Package
+        - CGT: Code Generation Tools for compiling code for M3 & C64x targets
+
+    o All the above tools (except for CGT) are available for public download
+      from the following webpage:
+          http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/
+
+    o The Code Generation Tools can be downloaded publicly from the following
+      webpage (after registering with TI):
+          https://www-a.ti.com/downloads/sds_support/TICodegenerationTools/
+
+    o The following are the current versions and download instructions for these tools.
+       1) BIOS:  6.32.01.38
+          Public Links:-
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_32_01_38/exports/bios_setuplinux_6_32_01_38.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/bios/sysbios/6_32_01_38/exports/bios_setupwin32_6_32_01_38.exe
+          TI Internal Links :-
+            Linux:   http://www.sanb.design.ti.com//tisb_releases//BIOS/6_32_01_38/exports/bios_setuplinux_6_32_01_38.bin
+            Windows: http://www.sanb.design.ti.com//tisb_releases//BIOS/6_32_01_38/exports/bios_setupwin32_6_32_01_38.exe
+
+       2) XDC: 3.22.01.21
+          Public Links:-
+            Linux:   http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_22_01_21/exports/xdctools_setuplinux_3_22_01_21.bin
+            Windows: http://software-dl.ti.com/dsps/dsps_public_sw/sdo_sb/targetcontent/rtsc/3_22_01_21/exports/xdctools_setupwin32_3_22_01_21.exe
+          TI Internal Links :-
+            Linux:   http://www.sanb.design.ti.com//tisb_releases//XDCtools/3_22_01_21/exports/xdctools_setuplinux_3_22_01_21.bin
+            Windows: http://www.sanb.design.ti.com//tisb_releases//XDCtools/3_22_01_21/exports/xdctools_setupwin32_3_22_01_21.exe
+
+       3) CGT TMS470: 4.9.0
+          Public Links:-
+            Please pick the appropriate version from the above public link.
+         TI Internal Links:-
+            Linux:   http://syntaxerror.dal.design.ti.com/release/releases/arm/rel4_9_0/build/install/ti_cgt_tms470_4.9.0_setup_linux_x86.bin
+            Windows: http://syntaxerror.dal.design.ti.com/release/releases/arm/rel4_9_0/build/install/ti_cgt_tms470_4.9.0_setup_win32.exe
+
+       4) CGT C6000: 7.2.0
+          Public Links:-
+            Please pick the appropriate version from the above public link.
+          TI Internal Links:-
+            Linux:   http://syntaxerror.dal.design.ti.com/release/releases/c60/rel7_2_0/build/install/ti_cgt_c6000_7.2.0_setup_linux_x86.bin
+            Windows: http://syntaxerror.dal.design.ti.com/release/releases/c60/rel7_2_0/build/install/ti_cgt_c6000_7.2.0_setup_win32.exe
+
+
+BUILD (Linux Environment)
+    1) Export the proper environment variables to point to your Code Generation
+       Tools installation paths (if different from the default)
+       Eg:
+           export TMS470CGTOOLPATH=/data/omapts/linux/dsp-tc/cgtarm-4.9.0
+           export C6000CGTOOLPATH=/data/omapts/linux/dsp-tc/cgt6x-7.2.0
+
+    2) Edit Makefile to point the REPO variable to the correct local
+       installation path, where all the necessary BIOS tools/packages are
+       installed.
+       Eg:
+          REPO          = /data/omapts/linux/dsp-tc
+
+    3) Edit Makefile so that the following variables are correctly set (if
+       different from the default installation locations)
+       - REPO
+       - BIOSPRODVER
+       - IPCPRODVER
+       - XDCROOTVER
+
+    4) From the top-level sysbios-rpmsg directory, type in 'make' to build the
+       entire tree plus sample applications
+
+    5) Type 'make clean' to clean the tree
+
+    6) A default firmware binary, ducati-m3.bin is generated in the src/utils
+       directory, using two of the sample baseimages in Gollum tree.
+
+GITWEB
+    o The commit history can be looked up using the gitweb interface at:
+      http://git.omapzoom.org/?p=platform/hardware/ti/sysbios-rpmsg.git
