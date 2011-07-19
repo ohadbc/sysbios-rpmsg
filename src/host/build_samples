@@ -1,0 +1,7 @@
+# Note: copy to Linux kernel repo, tools/ to build.
+
+arm-none-linux-gnueabi-gcc test_rpmsg_omx.c -o test_rpmsg_omx -lpthread
+arm-none-linux-gnueabi-gcc omx_sample.c -o omx_sample -lpthread
+arm-none-linux-gnueabi-gcc omx_benchmark.c -o omx_benchmark -lrt
+
+#cp -p omx_sample omx_benchmark /data/exports/gp/omap4_angstrom_rfs/virtio

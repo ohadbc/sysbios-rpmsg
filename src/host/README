@@ -1,0 +1,11 @@
+The omx_sample.c Linux side test works with sysbios-rpmsg's test_omx.c
+
+Copy these files to Linux kernel tree: <kernel>/tools/:
+- omx_packet.h
+- omx_sample.c
+- omx_benchmark.c
+- build_samples
+
+From <kernel>/tools type "build_samples" to build.
+
+Copy omx_sample to target.

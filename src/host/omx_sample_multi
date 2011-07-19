@@ -1,0 +1,17 @@
+#!/bin/bash
+# Run test mulitple times
+#
+if [ $# -ne 2 ]
+then
+    echo "Usage: omx_sample_multi <num_processes> <iterations_per_process>"
+    exit
+fi
+
+for i in `seq 1 $1`
+do
+echo "Test # " $i
+# Uncomment to do in parallel:
+#omx_sample $2 &
+# or sequential:
+omx_sample $2
+done
