@@ -1,0 +1,59 @@
+#
+# Copyright (c) 2011, Texas Instruments Incorporated
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# *  Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+# *  Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# *  Neither the name of Texas Instruments Incorporated nor the names of
+#    its contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+# Repo
+REPO		= /usr/local
+
+# Edit Dependency Versions:
+XDCROOTVER	= xdctools_3_22_01_21
+BIOSPRODVER	= bios_6_32_01_38
+IPCPRODVER	= ipc_1_23_01_26
+
+BIOSPROD	= $(REPO)/$(BIOSPRODVER)
+IPCPROD		= $(REPO)/$(IPCPRODVER)
+XDCDIST_TREE	= $(REPO)/$(XDCROOTVER)
+
+export XDCROOT	= $(XDCDIST_TREE)
+
+export XDCPATH	= $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
+
+all:
+	$(XDCROOT)/xdc .interfaces -P src/ti/tools/build
+	$(XDCROOT)/xdc -k -j $(j) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
+	cd src/utils/elfload; make
+	cd src/utils; make
+
+clean:
+	$(XDCROOT)/xdc clean -Pr src
+	cd src/utils/elfload; make clean
+	cd src/utils; make clean
+	cd ../..
