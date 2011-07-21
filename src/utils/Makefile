@@ -30,7 +30,14 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-all: readrprc wrints genbase
+all: readrprc wrints genbase ducati-m3.bin
+
+ducati-m3.bin: ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3 ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 wrints genbase
+	#
+	# ensure that ducati's core0 program is listed before ducati's core1
+	# program, the Linux FW loader expects such.
+	#
+	./genrprc --t0=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_core0/debug/test_omx_sysm3.xem3  --t1=SysMin_Module_State_0_outbuf__A ../ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 $@
 
 CFLAGS = -Wall -m32
 RPRCOBJ = readrprc.o
