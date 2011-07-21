@@ -1,0 +1,4 @@
+%var suffix = Program.build.target.findSuffix(this);
+SECTIONS {
+    grcm.noload: { grcm.a`suffix`(.const:.string) }, load > 0, type = COPY
+}

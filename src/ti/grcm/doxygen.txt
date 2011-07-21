@@ -1,0 +1,131 @@
+/*
+ * Copyright (c) 2011, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+/*
+ * This is a little header file which doxygen parses to generate the main
+ * documentation page for the ti.rcm package.
+ */
+
+/*!
+ * @page ti_rcm Remote Command Message Overview
+ *
+ * @section modules Modules
+ *
+ *  Remote Command Message - message based remote function execution
+ *
+ *  The Remote Command Message (RCM) package provides a client/server
+ *  implementation for executing functions on a remote processor. The
+ *  package contains the following modules.
+ *     - @ref ti_rcm_RcmClient "RcmClient" - Client Module
+ *     - @ref ti_rcm_RcmServer "RcmServer" - Server Module
+ *
+ *  This package provides modules for a client/server based implementation
+ *  for executing functions on a remote processor. The IPC layer is based
+ *  on messages. The application uses the RcmClient module to allocate a
+ *  message, specify the remote function and its arguments, and then send
+ *  the message to the server for execution. When the message returns, it
+ *  contains the remote function's return values. The server is typically
+ *  on a remote processor, but local server instances (on the same processor
+ *  as the client) are also supported.
+ *
+ *  The following image provides an overview of a typical use case. An
+ *  application running on the local cpu creates an RcmClient instance.
+ *  Using the RcmClient instance handle, the application has access to all
+ *  the necessary operations for executing a message on the remote server.
+ *  The application must fill in the message with the remote function
+ *  index, as supplied by the server, and the context needed by the remote
+ *  function to execute. For higher level operations such as RPC, see the
+ *  <tt>link ti.rpc.gen</tt> package which provides support for generating
+ *  the stub and skeleton functions.
+ *
+ *  @image html ti/rcm/doc-files/Overview.png "Diagram 1: RCM Overview"
+ *
+ *  The RcmClient module is used to create instance objects. Each instance
+ *  can send messages only to the server specified at create time. You
+ *  create an instance for each server you want to send messages to. At
+ *  create time the heap must be specified. The heap is used by the instance
+ *  for allocating messages.
+ *
+ *  There are four types of execute commands:
+ *  - synchronous blocking
+ *  - synchronous non-blocking
+ *  - synchronous deferred
+ *  - asynchronous non-blocking
+ *
+ *  Here is an overview of the exec commands. See the
+ *  @ref ti_rcm_RcmClient "RcmClient" module for more details on each
+ *  function.
+ *
+ *  - RcmClient_exec() - synchronous blocking
+ *    This function sends a message to the server and waits for the server
+ *    to execute the message and to send the return message back to the
+ *    client.
+ *
+ *  - RcmClient_execNoWait() - synchronous non-blocking
+ *    This function sends a message to the server but does not wait for the
+ *    return message. Control returns to the caller as soon as the message
+ *    has been delivered to the underlying transport. The server will
+ *    execute the message and send the return message back to the client
+ *    where it is placed in a mailbox. The client collects the return message
+ *    with a call to RcmClient_waitUntilDone() which is a blocking call.
+ *    This is useful when the client has more work to do while the remote
+ *    function is executing. It is also efficient because it does not require
+ *    a local callback thread.
+ *
+ *  - RcmClient_execDpc() - synchronous deferred
+ *    This function sends a message to the server and waits for the return
+ *    message. When the server receives the message, it does not immediately
+ *    execute it. Instead, it copies the message context into a local buffer
+ *    and sends the message back to the client. Only after the message has
+ *    been sent to the client, does the server execute the function. This is
+ *    useful for server shutdown. This allows the client to regain ownership
+ *    of the message and to return it to the heap and allows the server to
+ *    shutdown without owning any resources allocated by the client.
+ *
+ *  - RcmClient_execAsync() - asynchronous non-blocking
+ *    This function sends a message to the server but does not wait for the
+ *    return message. Control returns to the caller as in the synchronous
+ *    non-blocking case above. The server will execute the message and send
+ *    the return message back to the client for delivery to a callback
+ *    thread. When the return message arrives, the callback thread will
+ *    invoke an application callback to notify the application that the
+ *    return message has arrived. This is the only asynchronous part of the
+ *    sequence as the application will be preempted by the callback thread.
+ *    It is the application's responsibility to periodically monitor a flag
+ *    (set by the callback) to complete the message delivery.
+ *
+ *  <h2>RTSC Configuration</h2>
+ *
+ *  When using XDCtools to build your executable, use the following module
+ *  to define the build time configuration options.
+ *
+ *  @rtsc(ti.rcm.Settings RCM Settings Module)
+ */
