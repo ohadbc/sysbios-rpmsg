@@ -69,7 +69,7 @@ static UInt16 IpcResource_resLen(IpcResource_Type type)
     return 0;
 }
 
-static Int Ipc_Resource_translateError(Int kstatus)
+static Int _IpcResource_translateError(Int kstatus)
 {
     switch (kstatus) {
     case 0:
@@ -129,7 +129,7 @@ IpcResource_Handle IpcResource_connect(UInt timeout)
                       "failed status %d\n", status);
         goto err;
     }
-    status = Ipc_Resource_translateError(ack.status);
+    status = _IpcResource_translateError(ack.status);
     if (status) {
         System_printf("IpcResource_connect: A9 Resource Manager "
                       "failed status %d\n", status);
@@ -221,10 +221,15 @@ Int IpcResource_request(IpcResource_Handle handle,
                  IpcResource_E_FAIL;
         goto end;
     }
+    status = _IpcResource_translateError(ack->status);
+    if (status) {
+        System_printf("IpcResource_request: error from Host "
+                      "failed status %d\n", status);
+        goto end;
+    }
 
     Assert_isTrue(len == (rlen + alen), NULL);
 
-    status = Ipc_Resource_translateError(ack->status);
     *resHandle = ack->resHandle;
     memcpy(resParams, ack->resParams, rlen);
 end:
@@ -284,7 +289,7 @@ Int IpcResource_setConstraints(IpcResource_Handle handle,
 
     Assert_isTrue(len == (rlen + alen), NULL);
 
-    status = Ipc_Resource_translateError(ack->status);
+    status = _IpcResource_translateError(ack->status);
 
 end:
     return status;
