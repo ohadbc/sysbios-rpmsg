@@ -30,7 +30,6 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 /*
  *  ======== package.bld ========
  *
@@ -39,20 +38,6 @@
 /* explicit references to global objects */
 var Build = xdc.useModule('xdc.bld.BuildEnvironment');
 var Pkg = xdc.useModule('xdc.bld.PackageContents');
-
-/* use common package build support */
-var BuildHelp = xdc.useModule('ti.tools.build.PackageBuildHelp');
-
-BuildHelp.skipLib = function(lib, targ)
-{
-    /* build grcm_syslink.a only for Linux targets */
-    if (lib.name.match(/syslink/)) {
-        return targ.os != "Linux" ? true : false;
-    }
-    else {
-        return false;
-    }
-}
 
 /* clean lib folder */
 Pkg.generatedFiles.$add("lib/");
@@ -65,20 +50,20 @@ Pkg.makePrologue =
     "-include prologue.mak\n" +
     "-include docs.mak\n";
 
-Pkg.attrs.exportSrc = false;
 /* add custom files to all releases */
+Pkg.attrs.exportSrc = false;
 Pkg.otherFiles = [
     "RcmClient.h",
     "RcmServer.h",
     "RcmTypes.h"
 ];
 
-// list of libraries to build
+/* list of libraries to build */
 var libArray = new Array();
 
-// grcm with ti.ipc
+/* grcm with ti.ipc */
 libArray.push(
-    new BuildHelp.LibAttrs({
+    {
         name: "grcm",
         sources: [
             "RcmServer.c",
@@ -87,12 +72,12 @@ libArray.push(
         libAttrs: {
             defs: "-DRCM_ti_ipc"
         }
-    })
+    }
 );
 
-// grcm with ti.syslink (ARM only)
+/* grcm with ti.syslink (ARM only) */
 libArray.push(
-    new BuildHelp.LibAttrs({
+    {
         name: "grcm_syslink",
         sources: [
             "RcmServer.c",
@@ -102,8 +87,74 @@ libArray.push(
             defs: "-DRCM_ti_syslink"
         },
         icw: [ "v5T" ]
-    })
+    }
 );
 
 /* generate the package libraries */
-BuildHelp.makeLibraries(libArray, arguments, ["debug","release"]);
+var Pkg = xdc.useModule('xdc.bld.PackageContents');
+/* check if profile specified in XDCARGS */
+/* XDCARGS="... profile=debug ..." */
+var cmdlProf = (" " + arguments.join(" ") + " ").match(/ profile=([^ ]+) /);
+cmdlProf = cmdlProf != null ? cmdlProf[1] : null;
+
+/* ==== loop over array of libraries ==== */
+for (var i = 0; i < libArray.length; i++) {
+    var lib = libArray[i];
+
+    /* ==== loop over all targets in build array ==== */
+    for (var j = 0; j < Build.targets.length; j++) {
+        var targ = Build.targets[j];
+
+        /* invoke user supplied target predicate function */
+        if (this.skipTarget != undefined)  {
+            continue;
+        }
+
+        /* skip target if not compatible with source code */
+        if ("icw" in lib) {
+            var skipTarget = true;
+            var targIsaChain = "/" + targ.getISAChain().join("/") + "/";
+            for (var k = 0; k < lib.icw.length; k++) {
+                if (targIsaChain.match("/" + lib.icw[k] + "/")) {
+                    skipTarget = false;
+                    break;
+                }
+            }
+            if (skipTarget) continue;
+        }
+
+        /* skip target if it does not generate code for the given isa */
+        if ("isas" in lib) {
+            var skipTarget = true;
+            var list = "/" + lib.isas.join("/") + "/";
+            if (list.match("/" + targ.isa + "/")) {
+                skipTarget = false;
+            }
+            if (skipTarget) continue;
+        }
+
+        /* ==== loop over all profiles ==== */
+        for (var profile in targ.profiles) {
+
+            /* skip profile if different than specified on command line */
+            if ((cmdlProf != null) && (profile != cmdlProf)) {
+                continue;
+            }
+
+            /* name = lib/profile/name.a+suffix */
+            var name = "lib/" + profile + "/" + lib.name;
+
+            /* pass along library attributes specified in library array */
+            var libAttrs = "libAttrs" in lib ? lib.libAttrs : {};
+
+            /* must set profile explicitly */
+            libAttrs.profile = profile;
+
+            /* build the library */
+            var library = Pkg.addLibrary(name, targ, libAttrs);
+
+            /* add the source files */
+            library.addObjects(lib.sources);
+        }
+    }
+}
