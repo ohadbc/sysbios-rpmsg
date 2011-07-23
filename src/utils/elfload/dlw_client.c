@@ -156,6 +156,7 @@ static void patchup_resources(struct rproc_fw_resource *res,
             }
             break;
 
+        case RSC_CARVEOUT:
         case RSC_DEVMEM:
         case RSC_IRQ:
         case RSC_DEVICE:
