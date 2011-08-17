@@ -35,6 +35,14 @@
  */
 
 /* add custom files to all releases */
-Pkg.otherFiles = [
-    "rsc_table.h"
-];
+for (var i = 0; i < Build.targets.length; i++) {
+	if (Build.targets[i].name.match(/C64T/)) {
+		Pkg.otherFiles = [
+			"rsc_table_dsp.h"
+		];
+	} else if (Build.targets[i].name.match(/M3/)) {
+			Pkg.otherFiles = [
+			"rsc_table.h",
+		];
+	}
+}
