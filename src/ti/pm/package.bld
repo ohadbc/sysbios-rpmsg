@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,6 +46,15 @@ var commonBld = xdc.loadCapsule("ti/sdo/ipc/build/common.bld");
  *    ];
  */
 
+var objList_64T = [
+      "IpcPowerDsp",
+];
+
+var trgFilter_64T = {
+        field: "isa",
+        list: [ "64T" ]
+};
+
 var objList_m3 = [
       "IpcPower",
 ];
@@ -57,8 +66,11 @@ var trgFilter_m3 = {
 
 /* generate makefiles */
 arguments = ["profile=debug platform=all"];
+commonBld.buildLibs(objList_64T, undefined, trgFilter_64T, arguments);
 commonBld.buildLibs(objList_m3, undefined, trgFilter_m3, arguments);
+
 arguments = ["profile=release platform=all"];
+commonBld.buildLibs(objList_64T, undefined, trgFilter_64T, arguments);
 commonBld.buildLibs(objList_m3, undefined, trgFilter_m3, arguments);
 
 Pkg.otherFiles = [
