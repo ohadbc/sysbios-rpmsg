@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,55 +30,54 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- *  ======== package.bld ========
+ *  ======== InterruptProxy.h ========
+ *  Proxy Interrupt Manager
  */
 
-var testBld = xdc.loadCapsule("ti/sdo/ipc/build/test.bld");
-var commonBld = xdc.loadCapsule("ti/sdo/ipc/build/common.bld");
+#ifndef ti_ipc_rpmsg_InterruptProxy__include
+#define ti_ipc_rpmsg_InterruptProxy__include
 
-/*
- *  ======== testArray ========
- *
- *  Example:
- *    var testArray = [
- *        {name: Test1},
- *        {name: Test2, sources: ["Test"], config: "Test", refOutput: "Test", timeout: "15", buildTargets: ["C64", "C28_large"]}
- *    ];
+#if defined (__cplusplus)
+extern "C" {
+#endif
+
+#include <ti/sysbios/hal/Hwi.h>
+
+#define INVALIDPAYLOAD       (0xFFFFFFFF)
+
+
+/*!
+ *  ======== InterruptProxy_intEnable ========
+ *  Enable remote processor interrupt
  */
+Void InterruptProxy_intEnable();
 
-var objList_64T = [
-      "MessageQCopy",
-      "VirtQueue",
-      "InterruptDsp",
-];
+/*!
+ *  ======== InterruptProxy_intDisable ========
+ *  Disable remote processor interrupt
+ */
+Void InterruptProxy_intDisable();
 
-var trgFilter_64T = {
-        field: "isa",
-        list: [ "64T" ]
-};
+/*!
+ *  ======== InterruptProxy_intRegister ========
+ *  Register a Hwi function for the remote processor interrupt
+ */
+Void InterruptProxy_intRegister(Hwi_FuncPtr fxn);
 
-var objList_m3 = [
-      "MessageQCopy",
-      "VirtQueue",
-      "InterruptM3",
-];
+/*!
+ *  ======== InterruptProxy_intSend ========
+ *  Send interrupt to the remote processor
+ */
+Void InterruptProxy_intSend(UInt16 remoteProcId,  UArg arg);
 
-var trgFilter_m3 = {
-        field: "isa",
-        list: [ "v7M" ]
-};
+/*!
+ *  ======== InterruptProxy_intClear ========
+ *  Clear interrupt
+ */
+UInt InterruptProxy_intClear();
 
-/* generate makefiles */
-arguments = ["profile=debug platform=all"];
-commonBld.buildLibs(objList_64T, undefined, trgFilter_64T, arguments);
-commonBld.buildLibs(objList_m3, undefined, trgFilter_m3, arguments);
+#if defined (__cplusplus)
+}
+#endif /* defined (__cplusplus) */
 
-arguments = ["profile=release platform=all"];
-commonBld.buildLibs(objList_64T, undefined, trgFilter_64T, arguments);
-commonBld.buildLibs(objList_m3, undefined, trgFilter_m3, arguments);
-
-Pkg.attrs.exportSrc = false;
-Pkg.otherFiles = [
-    "MessageQCopy.h",
-    "InterruptProxy.h",
-];
+#endif /* ti_ipc_rpmsg_InterruptProxy__include */

@@ -64,7 +64,7 @@
 #include <ti/sysbios/knl/Semaphore.h>
 #include <ti/sysbios/BIOS.h>
 
-#include <ti/ipc/rpmsg/InterruptM3.h>
+#include <ti/ipc/rpmsg/InterruptProxy.h>
 
 #include <ti/ipc/MultiProc.h>
 #include <ti/ipc/rpmsg/VirtQueue.h>
@@ -201,7 +201,7 @@ Void VirtQueue_kick(VirtQueue_Handle vq)
     Log_print2(Diags_USER1,
             "VirtQueue_kick: Sending interrupt to proc %d with payload 0x%x\n",
             (IArg)vq->procId, (IArg)vq->id);
-    InterruptM3_intSend(vq->procId, vq->id);
+    InterruptProxy_intSend(vq->procId, vq->id);
 }
 
 /*!
@@ -344,7 +344,7 @@ Void VirtQueue_isr(UArg msg)
             return;
 
         case (UInt)RP_MBOX_ECHO_REQUEST:
-            InterruptM3_intSend(hostProcId, (UInt)(RP_MBOX_ECHO_REPLY));
+            InterruptProxy_intSend(hostProcId, (UInt)(RP_MBOX_ECHO_REPLY));
             return;
 
         case (UInt)RP_MBOX_ABORT_REQUEST:
@@ -477,18 +477,18 @@ Void VirtQueue_startup()
     if (MultiProc_self() == dspProcId) {
         memset((void *)RP_MSG_A9_SYSM3_VRING_PHYS, 0,
                 RP_MSG_RING_SIZE * 2 + RP_MSG_BUFS_SPACE);
-        InterruptM3_intRegister(VirtQueue_isr);
+        InterruptProxy_intRegister(VirtQueue_isr);
 
-        InterruptM3_intSend(sysm3ProcId, (UInt)RP_MSG_MBOX_READY);
-        InterruptM3_intSend(sysm3ProcId, (0xA0000000));
-        InterruptM3_intSend(appm3ProcId, (UInt)RP_MSG_MBOX_READY);
-        InterruptM3_intSend(appm3ProcId, (0xA0000000));
+        InterruptProxy_intSend(sysm3ProcId, (UInt)RP_MSG_MBOX_READY);
+        InterruptProxy_intSend(sysm3ProcId, (0xA0000000));
+        InterruptProxy_intSend(appm3ProcId, (UInt)RP_MSG_MBOX_READY);
+        InterruptProxy_intSend(appm3ProcId, (0xA0000000));
 
         buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
     }
     else {
         semHandle = Semaphore_create(0, NULL, NULL);
-        InterruptM3_intRegister(VirtQueue_isr);
+        InterruptProxy_intRegister(VirtQueue_isr);
 
         /* Wait for 2 interrupts to come in from HOST/CORE1 */
         Semaphore_pend(semHandle, BIOS_WAIT_FOREVER);
@@ -505,5 +505,5 @@ Void VirtQueue_startup()
 Void postCrashToMailbox(Error_Block * eb)
 {
     Error_print(eb);
-    InterruptM3_intSend(0, (UInt)RP_MSG_MBOX_CRASH);
+    InterruptProxy_intSend(0, (UInt)RP_MSG_MBOX_CRASH);
 }
