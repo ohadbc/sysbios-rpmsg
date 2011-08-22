@@ -205,7 +205,7 @@ void initRpmsgCio()
 	 */
 	transport.virtQueue_toHost   = VirtQueue_create(callback_availBufReady,
 			remoteProcId,
-			CONSOLE_SYSM3_TO_A9);
+			CONSOLE_SELF_TO_A9);
 	if (transport.virtQueue_toHost == NULL) {
 		System_printf("VirtQueue_create failed\n");
 		return;
@@ -213,7 +213,7 @@ void initRpmsgCio()
 
 	transport.virtQueue_fromHost = VirtQueue_create(callback_availBufReady,
 			remoteProcId,
-			CONSOLE_A9_TO_SYSM3);
+			CONSOLE_A9_TO_SELF);
 	if (transport.virtQueue_fromHost == NULL) {
 		System_printf("VirtQueue_create failed\n");
 		return;

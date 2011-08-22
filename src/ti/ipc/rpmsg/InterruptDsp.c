@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,8 +74,6 @@
 
 Hwi_FuncPtr userFxn = NULL;
 
-Void InterruptDsp_isr(UArg arg);
-
 /*
  *************************************************************************
  *                      Proxy functions
@@ -139,14 +137,17 @@ Void InterruptDsp_intRegister(Hwi_FuncPtr fxn)
     Hwi_Params  hwiAttrs;
     UInt        key;
 
-    while (InterruptDsp_intClear() != (UInt)-1);
-
     userFxn = fxn;
 
     /* Disable global interrupts */
     key = Hwi_disable();
 
-    InterruptDsp_intClear();
+    /*
+     * DSP interrupts are edge-triggered, so clear the interrupt status to
+     * regenerate an interrupt if there are some messages sent prior to
+     * booting the DSP.
+     */
+    REG32(MAILBOX_IRQSTATUS_CLR_DSP) = MAILBOX_REG_VAL(HOST_TO_DSP_MBX);
 
     Hwi_Params_init(&hwiAttrs);
 
@@ -178,6 +179,12 @@ Void InterruptDsp_intSend(UInt16 remoteProcId, UArg arg)
     }
     else if (remoteProcId == MultiProc_getId("CORE1")) {
         REG32(MAILBOX_MESSAGE(SYSM3_TO_APPM3_MBX)) = arg;
+    }
+    else if (remoteProcId == MultiProc_getId("HOST")) {
+        REG32(MAILBOX_MESSAGE(DSP_TO_HOST_MBX)) = arg;
+    }
+    else if (remoteProcId == MultiProc_getId("DSP")) {
+        REG32(MAILBOX_MESSAGE(HOST_TO_DSP_MBX)) = arg;
     }
 }
 

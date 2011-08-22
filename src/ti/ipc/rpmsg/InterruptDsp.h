@@ -68,3 +68,9 @@ Void InterruptDsp_intSend(UInt16 remoteProcId,  UArg arg);
  *  Clear interrupt
  */
 UInt InterruptDsp_intClear();
+
+/*!
+ *  ======== InterruptDsp_isr ========
+ *  Interrupt-layer isr that processes incoming mailbox
+ */
+Void InterruptDsp_isr(UArg arg);

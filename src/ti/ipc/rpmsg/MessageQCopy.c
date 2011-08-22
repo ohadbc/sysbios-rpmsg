@@ -248,10 +248,10 @@ Void MessageQCopy_init(UInt16 remoteProcId)
      */
     transport.virtQueue_toHost   = VirtQueue_create(callback_availBufReady,
                                                     remoteProcId,
-						    ID_SYSM3_TO_A9);
+                                                    ID_SELF_TO_A9);
     transport.virtQueue_fromHost = VirtQueue_create(callback_availBufReady,
                                                     remoteProcId,
-						    ID_A9_TO_SYSM3);
+                                                    ID_A9_TO_SELF);
 
     /* construct the Swi to process incoming messages: */
     transport.swiHandle = Swi_create(MessageQCopy_swiFxn, NULL, NULL);

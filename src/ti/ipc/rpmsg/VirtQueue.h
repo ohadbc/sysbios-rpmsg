@@ -201,11 +201,11 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf, int *len);
  */
 Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 token, int len);
 
-#define ID_SYSM3_TO_A9      0
-#define ID_A9_TO_SYSM3      1
+#define ID_SELF_TO_A9       0
+#define ID_A9_TO_SELF       1
 
-#define CONSOLE_SYSM3_TO_A9 2
-#define CONSOLE_A9_TO_SYSM3 3
+#define CONSOLE_SELF_TO_A9  2
+#define CONSOLE_A9_TO_SELF  3
 
 #define RP_MSG_BUF_SIZE     (512)
 
