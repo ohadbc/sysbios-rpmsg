@@ -56,10 +56,11 @@
 #define M3INT                   19
 
 /* Assigned mailboxes */
-#define SYSM3_MBX               0
-#define HOST_MBX                1
-#define APPM3_MBX               2
-#define DSP_MBX                 3
+#define HOST_TO_SYSM3_MBX       0 /* Rx on SysM3 from Host */
+#define M3_TO_HOST_MBX          1 /* Tx to Host from M3 */
+#define DSP_TO_HOST_MBX         2 /* Tx to Host from DSP */
+#define HOST_TO_DSP_MBX         3 /* Rx on DSP from Host */
+#define SYSM3_TO_APPM3_MBX      4 /* Rx on AppM3 from Host/SysM3 */
 
 #define MAILBOX_BASEADDR        (0xAA0F4000)
 
@@ -137,7 +138,7 @@ Void InterruptM3_intEnable()
      *  share the same Hwi
      */
     if (Core_getId() == 0) {
-        REG32(MAILBOX_IRQENABLE_SET_M3) = MAILBOX_REG_VAL(SYSM3_MBX);
+        REG32(MAILBOX_IRQENABLE_SET_M3) = MAILBOX_REG_VAL(HOST_TO_SYSM3_MBX);
     }
     else {
         Hwi_enableInterrupt(M3INT);
@@ -156,7 +157,7 @@ Void InterruptM3_intDisable()
      *  share the same Hwi
      */
     if (Core_getId() == 0) {
-        REG32(MAILBOX_IRQENABLE_CLR_M3) = MAILBOX_REG_VAL(SYSM3_MBX);
+        REG32(MAILBOX_IRQENABLE_CLR_M3) = MAILBOX_REG_VAL(HOST_TO_SYSM3_MBX);
     }
     else {
         Hwi_disableInterrupt(M3INT);
@@ -215,23 +216,23 @@ Void InterruptM3_intSend(UInt16 remoteProcId, UArg arg)
         "InterruptM3_intSend: Sending interrupt with payload 0x%x to proc #%d",
         (IArg)arg, (IArg)remoteProcId);
     if (remoteProcId == sysm3ProcId) {
-        while(REG32(MAILBOX_FIFOSTATUS(SYSM3_MBX)));
-        REG32(MAILBOX_MESSAGE(SYSM3_MBX)) = arg;
+        while(REG32(MAILBOX_FIFOSTATUS(HOST_TO_SYSM3_MBX)));
+        REG32(MAILBOX_MESSAGE(HOST_TO_SYSM3_MBX)) = arg;
     }
     else if (remoteProcId == appm3ProcId) {
-        while(REG32(MAILBOX_FIFOSTATUS(APPM3_MBX)));
+        while(REG32(MAILBOX_FIFOSTATUS(SYSM3_TO_APPM3_MBX)));
         /* Write to the mailbox, but this won't trigger an interrupt */
-        REG32(MAILBOX_MESSAGE(APPM3_MBX)) = arg;
+        REG32(MAILBOX_MESSAGE(SYSM3_TO_APPM3_MBX)) = arg;
         /* Actually trigger the interrupt */
         REG16(INTERRUPT_CORE_1) |= 0x1;
     }
     else if (remoteProcId == dspProcId) {
-        while(REG32(MAILBOX_FIFOSTATUS(DSP_MBX)));
-        REG32(MAILBOX_MESSAGE(DSP_MBX)) = arg;
+        while(REG32(MAILBOX_FIFOSTATUS(HOST_TO_DSP_MBX)));
+        REG32(MAILBOX_MESSAGE(HOST_TO_DSP_MBX)) = arg;
     }
     else if (remoteProcId == hostProcId) {
-        while(REG32(MAILBOX_FIFOSTATUS(HOST_MBX)));
-        REG32(MAILBOX_MESSAGE(HOST_MBX)) = arg;
+        while(REG32(MAILBOX_FIFOSTATUS(M3_TO_HOST_MBX)));
+        REG32(MAILBOX_MESSAGE(M3_TO_HOST_MBX)) = arg;
     }
     else {
         /* Should never get here */
@@ -250,13 +251,14 @@ UInt InterruptM3_intClear()
     /* First check whether incoming mailbox has a message */
     if (Core_getId() == 0) {
         /* If FIFO is empty, return InterruptM3_INVALIDPAYLOAD */
-        if (REG32(MAILBOX_STATUS(SYSM3_MBX)) == 0) {
+        if (REG32(MAILBOX_STATUS(HOST_TO_SYSM3_MBX)) == 0) {
             return (arg);
         }
         else {
             /* If there is a message, return the argument to the caller */
-            arg = REG32(MAILBOX_MESSAGE(SYSM3_MBX));
-            REG32(MAILBOX_IRQSTATUS_CLR_M3) = MAILBOX_REG_VAL(SYSM3_MBX);
+            arg = REG32(MAILBOX_MESSAGE(HOST_TO_SYSM3_MBX));
+            REG32(MAILBOX_IRQSTATUS_CLR_M3) =
+                                        MAILBOX_REG_VAL(HOST_TO_SYSM3_MBX);
         }
     }
     else {
@@ -266,15 +268,16 @@ UInt InterruptM3_intClear()
         }
 
         /* If FIFO is empty, return InterruptM3_INVALIDPAYLOAD */
-        if (REG32(MAILBOX_STATUS(APPM3_MBX)) == 0) {
+        if (REG32(MAILBOX_STATUS(SYSM3_TO_APPM3_MBX)) == 0) {
             return (arg);
         }
         else {
             /* If there is a message, return the argument to the caller */
-            arg = REG32(MAILBOX_MESSAGE(APPM3_MBX));
-            REG32(MAILBOX_IRQSTATUS_CLR_M3) = MAILBOX_REG_VAL(APPM3_MBX);
+            arg = REG32(MAILBOX_MESSAGE(SYSM3_TO_APPM3_MBX));
+            REG32(MAILBOX_IRQSTATUS_CLR_M3) =
+                                        MAILBOX_REG_VAL(SYSM3_TO_APPM3_MBX);
 
-            if (REG32(MAILBOX_STATUS(APPM3_MBX)) != 0) {
+            if (REG32(MAILBOX_STATUS(SYSM3_TO_APPM3_MBX)) != 0) {
                 /* Trigger our own interrupt since another interrupt pending */
                 REG16(INTERRUPT_CORE_1) |= 0x1;
             }

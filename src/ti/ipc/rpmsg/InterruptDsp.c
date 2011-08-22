@@ -56,13 +56,11 @@
 #define DSPEVENTID              5
 
 /* Assigned mailboxes */
-#define SYSM3_MBX               0
-#define HOST_MBX_0              1
-
-#define HOST_MBX_1              2
-#define APPM3_MBX               3
-
-#define DSP_MBX                 4
+#define HOST_TO_SYSM3_MBX       0 /* Rx on SysM3 from Host */
+#define M3_TO_HOST_MBX          1 /* Tx to Host from M3 */
+#define DSP_TO_HOST_MBX         2 /* Tx to Host from DSP */
+#define HOST_TO_DSP_MBX         3 /* Rx on DSP from Host */
+#define SYSM3_TO_APPM3_MBX      4 /* Rx on AppM3 from Host/SysM3 */
 
 #define MAILBOX_BASEADDR    (0x4A0F4000)
 
@@ -121,7 +119,7 @@ UInt InterruptProxy_intClear()
  */
 Void InterruptDsp_intEnable()
 {
-    REG32(MAILBOX_IRQENABLE_SET_DSP) = MAILBOX_REG_VAL(DSP_MBX);
+    REG32(MAILBOX_IRQENABLE_SET_DSP) = MAILBOX_REG_VAL(HOST_TO_DSP_MBX);
 }
 
 /*!
@@ -130,7 +128,7 @@ Void InterruptDsp_intEnable()
  */
 Void InterruptDsp_intDisable()
 {
-    REG32(MAILBOX_IRQENABLE_CLR_DSP) = MAILBOX_REG_VAL(DSP_MBX);
+    REG32(MAILBOX_IRQENABLE_CLR_DSP) = MAILBOX_REG_VAL(HOST_TO_DSP_MBX);
 }
 
 /*!
@@ -176,10 +174,10 @@ Void InterruptDsp_intRegister(Hwi_FuncPtr fxn)
 Void InterruptDsp_intSend(UInt16 remoteProcId, UArg arg)
 {
     if (remoteProcId == MultiProc_getId("CORE0")) {
-        REG32(MAILBOX_MESSAGE(SYSM3_MBX)) = arg;
+        REG32(MAILBOX_MESSAGE(HOST_TO_SYSM3_MBX)) = arg;
     }
     else if (remoteProcId == MultiProc_getId("CORE1")) {
-        REG32(MAILBOX_MESSAGE(APPM3_MBX)) = arg;
+        REG32(MAILBOX_MESSAGE(SYSM3_TO_APPM3_MBX)) = arg;
     }
 }
 
@@ -191,10 +189,10 @@ UInt InterruptDsp_intClear()
 {
     UInt arg = INVALIDPAYLOAD;
 
-    if (REG32(MAILBOX_STATUS(DSP_MBX)) != 0) {
+    if (REG32(MAILBOX_STATUS(HOST_TO_DSP_MBX)) != 0) {
         /* If there is a message, return the argument to the caller */
-        arg = REG32(MAILBOX_MESSAGE(DSP_MBX));
-        REG32(MAILBOX_IRQSTATUS_CLR_DSP) = MAILBOX_REG_VAL(DSP_MBX);
+        arg = REG32(MAILBOX_MESSAGE(HOST_TO_DSP_MBX));
+        REG32(MAILBOX_IRQSTATUS_CLR_DSP) = MAILBOX_REG_VAL(HOST_TO_DSP_MBX);
     }
 
     return (arg);
