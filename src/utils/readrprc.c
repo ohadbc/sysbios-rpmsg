@@ -88,7 +88,7 @@ static void dump_resources(struct rproc_fw_section * s)
 
     printf("resource table: %d\n", sizeof(struct rproc_fw_resource));
     for (i = 0; i < s->len / sizeof(struct rproc_fw_resource); i++) {
-        printf("resource: %d, da: 0x%llx, pa: 0x%llx,len: %d, name: %s\n",
+        printf("resource: %d, da: 0x%8llx, pa: 0x%8llx, len: 0x%8x, name: %s\n",
                res[i].type, res[i].da, res[i].pa, res[i].len, res[i].name);
     }
     printf("\n");
@@ -120,7 +120,7 @@ static int dump_image(void * data, int size)
     s = (struct rproc_fw_section *)(hdr->header + hdr->header_len);
 
     while ((u8 *)s < (u8 *)(data + size)) {
-        printf("section: %d, address: 0x%llx, size: 0x%x\n", s->type,
+        printf("section: %d, address: 0x%8llx, size: 0x%8x\n", s->type,
                s->da, s->len);
         if (s->type == FW_RESOURCE) {
             dump_resources(s);
