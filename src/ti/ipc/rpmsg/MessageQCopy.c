@@ -94,11 +94,11 @@ typedef struct MessageQCopy_Module {
 
 /* Message Header: Must match mp_msg_hdr in virtio_rp_msg.h on Linux side. */
 typedef struct MessageQCopy_MsgHeader {
-    Bits16 dataLen;                 /* data length                        */
-    Bits16 flags;                   /* bitmask of different flags         */
     Bits32 srcAddr;                 /* source endpoint addr               */
     Bits32 dstAddr;                 /* destination endpoint addr          */
     Bits32 reserved;                /* reserved                           */
+    Bits16 dataLen;                 /* data length                        */
+    Bits16 flags;                   /* bitmask of different flags         */
     UInt8  payload[];               /* Data payload                       */
 } MessageQCopy_MsgHeader;
 
