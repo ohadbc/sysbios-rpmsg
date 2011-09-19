@@ -79,9 +79,9 @@
 /* Used for defining the size of the virtqueue registry */
 #define NUM_QUEUES                      5
 
-/* Predefined addresses */
-#define RP_MSG_A9_SYSM3_VRING_PHYS      0xA0000000U
-#define RP_MSG_SYSM3_A9_VRING_PHYS      0xA0002000U
+/* Predefined device addresses */
+#define RP_MSG_A9_SYSM3_VRING_DA      0xA0000000U
+#define RP_MSG_SYSM3_A9_VRING_DA      0xA0002000U
 
 /*
  * enum - Predefined Mailbox Messages
@@ -166,9 +166,7 @@ typedef struct VirtQueue_Object {
     UInt16                  procId;
 } VirtQueue_Object;
 
-static UInt initStage = 0;
-static Ptr buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
-static Semaphore_Handle semHandle = NULL;
+static Ptr buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_DA;
 
 static UInt numQueues = 0;
 static struct VirtQueue_Object *queueRegistry[NUM_QUEUES];
@@ -339,11 +337,6 @@ Void VirtQueue_isr(UArg msg)
     if (MultiProc_self() == sysm3ProcId) {
         switch(msg) {
             case (UInt)RP_MSG_MBOX_READY:
-                /* Start the initialization sequence */
-                initStage = 1;
-
-                /* Post the thread calling VirtQueue_startup */
-                Semaphore_post(semHandle);
                 return;
 
             case (UInt)RP_MBOX_ECHO_REQUEST:
@@ -373,26 +366,6 @@ Void VirtQueue_isr(UArg msg)
                  *  If the message isn't one of the above, it's either part of the
                  *  2-message synchronization sequence or it a virtqueue message
                  */
-                break;
-        }
-
-        switch (initStage) {
-            case 0:
-                /* Wait for RP_MSG_MBOX_READY before doing any initialization */
-                return;
-
-            case 1:
-                //buf_addr = (Ptr)msg;
-                buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
-                initStage++;
-
-                /* Post the thread calling VirtQueue_startup */
-                Semaphore_post(semHandle);
-                return;
-
-            case 2:
-            default:
-                /* Init is complete, treat payload as a VirtQueue message */
                 break;
         }
     }
@@ -500,7 +473,7 @@ Void VirtQueue_startup()
      *  HOST
      */
     if (MultiProc_self() == dspProcId) {
-        memset((void *)RP_MSG_A9_SYSM3_VRING_PHYS, 0,
+        memset((void *)RP_MSG_A9_SYSM3_VRING_DA, 0,
                 RP_MSG_RING_SIZE * 2 + RP_MSG_BUFS_SPACE);
         InterruptM3_intRegister(VirtQueue_isr);
 
@@ -509,22 +482,12 @@ Void VirtQueue_startup()
         InterruptM3_intSend(appm3ProcId, (UInt)RP_MSG_MBOX_READY);
         InterruptM3_intSend(appm3ProcId, (0xA0000000));
 
-        buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_PHYS;
+        buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_DA;
     }
-    else if (MultiProc_self() == sysm3ProcId) {
-        semHandle = Semaphore_create(0, NULL, NULL);
+    else if (MultiProc_self() == sysm3ProcId)
         InterruptM3_intRegister(VirtQueue_isr);
-
-        /* Wait for 2 interrupts to come in from HOST/CORE1 */
-        Semaphore_pend(semHandle, BIOS_WAIT_FOREVER);
-        Log_print0(Diags_USER1, "VirtQueue_startup: RP_MSG_MBOX_READY received\n");
-
-        Semaphore_pend(semHandle, BIOS_WAIT_FOREVER);
-        System_printf("VirtQueue_startup: buf_addr address of 0x%x received\n", buf_addr);
-    }
-    else if (MultiProc_self() == appm3ProcId) {
+    else if (MultiProc_self() == appm3ProcId)
         InterruptM3_intRegister(VirtQueue_isr);
-    }
 }
 
 /*!
