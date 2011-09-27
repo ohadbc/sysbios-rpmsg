@@ -47,6 +47,7 @@
 #include <ti/ipc/MultiProc.h>
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>
+#include <ti/ipc/rpmsg/VirtQueue.h>
 
 #include <ti/grcm/RcmTypes.h>
 #include <ti/grcm/RcmServer.h>
@@ -215,6 +216,7 @@ Int32 fxnDouble(UInt32 size, UInt32 *data)
 Int main(Int argc, char* argv[])
 {
     RcmServer_Params  rcmServerParams;
+    UInt16 dstProc;
 
     System_printf("%s starting..\n", MultiProc_getName(MultiProc_self()));
 
@@ -223,12 +225,18 @@ Int main(Int argc, char* argv[])
                   sizeof(resources) / sizeof(struct resource), resources);
 #endif
 
+    /* Plug vring interrupts, and spin until host handshake complete. */
+    VirtQueue_startup();
+
     /*
      * Enable use of runtime Diags_setMask per module:
      *
      * Codes: E = ENTRY, X = EXIT, L = LIFECYCLE, F = INFO, S = STATUS
      */
     Diags_setMask("ti.ipc.rpmsg.MessageQCopy=EXLFS");
+
+    dstProc = MultiProc_getId("HOST");
+    MessageQCopy_init(dstProc);
 
     /* Setup the table of services, so clients can create and connect to
      * new service instances:

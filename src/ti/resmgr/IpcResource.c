@@ -108,7 +108,6 @@ IpcResource_Handle IpcResource_connect(UInt timeout)
 
     dstProc = MultiProc_getId("HOST");
 
-    MessageQCopy_init(dstProc);
     handle->msgq= MessageQCopy_create(MessageQCopy_ASSIGN_ANY,
                                       &handle->endPoint);
     req.resType = 0;

@@ -67,8 +67,6 @@ Void copyTaskFxn(UArg arg0, UArg arg1)
 
     dstProc = MultiProc_getId("HOST");
 
-    MessageQCopy_init(dstProc);
-
     /* Create the messageQ for receiving (and get our endpoint for sending). */
     handle = MessageQCopy_create(arg0, &myEndpoint);
 
@@ -89,9 +87,6 @@ Void copyTaskFxn(UArg arg0, UArg arg1)
 
     /* Teardown our side: */
     MessageQCopy_delete(&handle);
-
-    /* Free MessageQCopy module wide resources: */
-    MessageQCopy_finalize();
 }
 
 void start_ping_tasks()

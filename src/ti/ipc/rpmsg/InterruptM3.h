@@ -36,8 +36,7 @@
 
 #include <ti/sysbios/hal/Hwi.h>
 
-#define INVALIDPAYLOAD       (0xFFFFFFFF)
-
+#define InterruptM3_INVALIDPAYLOAD       (0xFFFFFFFF)
 
 /*!
  *  ======== InterruptM3_intEnable ========
@@ -67,3 +66,9 @@ Void InterruptM3_intSend(UInt16 remoteProcId,  UArg arg);
  *  Clear interrupt
  */
 UInt InterruptM3_intClear();
+
+/*!
+ *  ======== InterruptM3_isr ========
+ *  Interrupt-layer isr that processes incoming mailbox
+ */
+Void InterruptM3_isr(UArg arg);

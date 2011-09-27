@@ -81,9 +81,7 @@
 #define INTERRUPT_CORE_0       (0x40001000)
 #define INTERRUPT_CORE_1       (0x40001000 + 2)
 
-Hwi_FuncPtr userFxn = NULL;
-
-Void InterruptM3_isr(UArg arg);
+static Hwi_FuncPtr userFxn = NULL;
 
 static UInt16 sysm3ProcId;
 static UInt16 appm3ProcId;
@@ -217,11 +215,11 @@ Void InterruptM3_intSend(UInt16 remoteProcId, UArg arg)
  */
 UInt InterruptM3_intClear()
 {
-    UInt arg = INVALIDPAYLOAD;
+    UInt arg = InterruptM3_INVALIDPAYLOAD;
 
     /* First check whether incoming mailbox has a message */
     if (Core_getId() == 0) {
-        /* If FIFO is empty, return INVALIDPAYLOAD */
+        /* If FIFO is empty, return InterruptM3_INVALIDPAYLOAD */
         if (REG32(MAILBOX_STATUS(SYSM3_MBX)) == 0) {
             return (arg);
         }
@@ -237,7 +235,7 @@ UInt InterruptM3_intClear()
             REG16(INTERRUPT_CORE_1) &= ~(0x1);
         }
 
-        /* If FIFO is empty, return INVALIDPAYLOAD */
+        /* If FIFO is empty, return InterruptM3_INVALIDPAYLOAD */
         if (REG32(MAILBOX_STATUS(APPM3_MBX)) == 0) {
             return (arg);
         }
@@ -265,7 +263,7 @@ Void InterruptM3_isr(UArg arg)
     UArg payload;
 
     payload = InterruptM3_intClear();
-    if (payload != INVALIDPAYLOAD) {
+    if (payload != InterruptM3_INVALIDPAYLOAD) {
         Log_print1(Diags_USER1,
             "InterruptM3_isr: Interrupt received, payload = 0x%x\n",
             (IArg)payload);

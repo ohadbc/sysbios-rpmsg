@@ -239,15 +239,9 @@ Void MessageQCopy_init(UInt16 remoteProcId)
        System_abort("MessageQCopy_init: HeapBuf_create returned 0\n");
     }
 
-    /* Initialize Transport related objects: */
-
     /*
-     * Plug Vring Interrupts, and create a pair VirtQueues (one for sending,
-     * one for receiving).
-     */
-    VirtQueue_startup();
-
-    /*
+     * Create a pair VirtQueues (one for sending, one for receiving).
+     *
      * Note: order of these calls determines the virtqueue indices identifying
      * the vrings toHost and fromHost:  toHost is first!
      */
