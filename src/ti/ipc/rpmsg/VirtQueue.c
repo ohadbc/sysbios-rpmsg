@@ -297,7 +297,7 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
      * Grab the next descriptor number they're advertising, and increment
      * the index we've seen.
      */
-    head = vq->last_avail_idx++ % vq->vring.num;
+    head = vq->vring.avail->ring[vq->last_avail_idx++ % vq->vring.num];
 
     *buf = mapPAtoVA(vq->vring.desc[head].addr);
 
