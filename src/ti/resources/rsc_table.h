@@ -85,12 +85,6 @@
 #define IPU_MEM_IPC             0xA0000000
 
 
-/* TODO:
- * Remove hardcoded RAM Addresses once we have the PA->VA lookup integrated.
- * IPC region should not be hard-coded. Text area is also not hard-coded since
- * VA to PA translation is not required. */
-#define PHYS_MEM_DATA           0xB9800000
-
 /* Size constants must match those used on host: include/asm-generic/sizes.h */
 #define SZ_1M                           0x00100000
 #define SZ_2M                           0x00200000
@@ -102,6 +96,18 @@
 #define SZ_128M                         0x08000000
 #define SZ_256M                         0x10000000
 #define SZ_512M                         0x20000000
+
+
+/* TODO:
+ * Remove hardcoded RAM Addresses once we have the PA->VA lookup integrated.
+ * IPC region should not be hard-coded. Text area is also not hard-coded since
+ * VA to PA translation is not required. */
+#ifndef IPU_MEM_DATA_ADDR
+#  define IPU_MEM_DATA_ADDR           0xB9800000
+#endif
+#ifndef IPU_MEM_DATA_SIZE
+#  define IPU_MEM_DATA_SIZE  (SZ_1M * 96)  /* OMX is a little piggy */
+#endif
 
 /* Resource info: Must match include/linux/remoteproc.h: */
 #define TYPE_CARVEOUT    0
@@ -146,7 +152,7 @@ struct resource resources[] = {
     /* IPU_MEM_IPC needs to be first for dynamic carveout */
     { TYPE_CARVEOUT, IPU_MEM_IPC,  0, 0, 0, SZ_1M, 0, "IPU_MEM_IPC"  },
     { TYPE_CARVEOUT, IPU_MEM_TEXT, 0, 0, 0, SZ_4M, 0, "IPU_MEM_TEXT" },
-    { TYPE_CARVEOUT, IPU_MEM_DATA, 0, PHYS_MEM_DATA, 0, SZ_1M * 96,
+    { TYPE_CARVEOUT, IPU_MEM_DATA, 0, IPU_MEM_DATA_ADDR, 0, IPU_MEM_DATA_SIZE,
        0, "IPU_MEM_DATA" },
 };
 
