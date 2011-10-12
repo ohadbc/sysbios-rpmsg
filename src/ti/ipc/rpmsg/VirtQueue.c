@@ -287,8 +287,9 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
     if (vq->last_avail_idx == vq->vring.avail->idx) {
         /* We need to know about added buffers */
         vq->vring.used->flags &= ~VRING_USED_F_NO_NOTIFY;
-
-        return (-1);
+        /* check again after setting flag */
+        if (vq->last_avail_idx == vq->vring.avail->idx)
+            return -1;
     }
 
     /* No need to know be kicked about added buffers anymore */
