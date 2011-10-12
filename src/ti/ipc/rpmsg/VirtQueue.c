@@ -80,8 +80,10 @@
 #define NUM_QUEUES                      5
 
 /* Predefined device addresses */
-#define RP_MSG_A9_SYSM3_VRING_DA      0xA0000000U
-#define RP_MSG_SYSM3_A9_VRING_DA      0xA0002000U
+#define IPU_MEM_VRING0          0xA0000000
+#define IPU_MEM_VRING1          0xA0003000
+#define IPU_MEM_VRING2          0xA0008000
+#define IPU_MEM_VRING3          0xA000b000
 
 /*
  * enum - Predefined Mailbox Messages
@@ -138,10 +140,10 @@ enum {
 /* The total IPC space needed to communicate with a remote processor */
 #define RPMSG_IPC_MEM   (RP_MSG_BUFS_SPACE + 2 * RP_MSG_RING_SIZE)
 
-#define ID_A9_TO_SYSM3      0
-#define ID_SYSM3_TO_A9      1
-#define ID_A9_TO_APPM3      2
-#define ID_APPM3_TO_A9      3
+#define ID_SYSM3_TO_A9      0
+#define ID_A9_TO_SYSM3      1
+#define ID_APPM3_TO_A9      2
+#define ID_A9_TO_APPM3      3
 
 typedef struct VirtQueue_Object {
     /* Id for this VirtQueue_Object */
@@ -166,8 +168,6 @@ typedef struct VirtQueue_Object {
     UInt16                  procId;
 } VirtQueue_Object;
 
-static Ptr buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_DA;
-
 static UInt numQueues = 0;
 static struct VirtQueue_Object *queueRegistry[NUM_QUEUES];
 
@@ -183,7 +183,7 @@ static inline Void * mapPAtoVA(UInt pa)
 
 static inline UInt mapVAtoPA(Void * va)
 {
-    return ((UInt)va & 0x000fffffU) | 0x9cf00000U;
+    return ((UInt)va & 0x000fffffU) | 0xa9800000U;
 }
 
 /*!
@@ -278,9 +278,10 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
 {
     UInt16 head;
 
-    Log_print5(Diags_USER1, "getAvailBuf vq: 0x%x %d %d %d 0x%x\n", (IArg)vq,
+    Log_print6(Diags_USER1, "getAvailBuf vq: 0x%x %d %d %d 0x%x 0x%x\n",
+	(IArg)vq,
         vq->last_avail_idx, vq->vring.avail->idx, vq->vring.num,
-        (IArg)&vq->vring.avail);
+        (IArg)&vq->vring.avail, (IArg)vq->vring.avail);
 
     /* There's nothing available? */
     if (vq->last_avail_idx == vq->vring.avail->idx) {
@@ -415,24 +416,17 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
     }
 
     switch (vq->id) {
-        case ID_A9_TO_SYSM3:
-            /* A9 -> SYSM3 */
-            vring_phys = (struct vring *)((UInt)buf_addr + RP_MSG_BUFS_SPACE);
-            break;
         case ID_SYSM3_TO_A9:
-            /* SYSM3 */
-            vring_phys = (struct vring *)((UInt)buf_addr +
-                    RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE);
+            vring_phys = (struct vring *) IPU_MEM_VRING0;
             break;
-        case ID_A9_TO_APPM3:
-            /* A9 -> APPM3 */
-            vring_phys = (struct vring *)((UInt)buf_addr + RP_MSG_BUFS_SPACE +
-                    RPMSG_IPC_MEM);
+        case ID_A9_TO_SYSM3:
+            vring_phys = (struct vring *) IPU_MEM_VRING1;
             break;
         case ID_APPM3_TO_A9:
-            /* APPM3 */
-            vring_phys = (struct vring *)((UInt)buf_addr +
-                    RP_MSG_RING_SIZE + RP_MSG_BUFS_SPACE + RPMSG_IPC_MEM);
+            vring_phys = (struct vring *) IPU_MEM_VRING2;
+            break;
+        case ID_A9_TO_APPM3:
+            vring_phys = (struct vring *) IPU_MEM_VRING3;
             break;
     }
 
@@ -473,16 +467,6 @@ Void VirtQueue_startup()
      *  HOST
      */
     if (MultiProc_self() == dspProcId) {
-        memset((void *)RP_MSG_A9_SYSM3_VRING_DA, 0,
-                RP_MSG_RING_SIZE * 2 + RP_MSG_BUFS_SPACE);
-        InterruptM3_intRegister(VirtQueue_isr);
-
-        InterruptM3_intSend(sysm3ProcId, (UInt)RP_MSG_MBOX_READY);
-        InterruptM3_intSend(sysm3ProcId, (0xA0000000));
-        InterruptM3_intSend(appm3ProcId, (UInt)RP_MSG_MBOX_READY);
-        InterruptM3_intSend(appm3ProcId, (0xA0000000));
-
-        buf_addr = (Ptr)RP_MSG_A9_SYSM3_VRING_DA;
     }
     else if (MultiProc_self() == sysm3ProcId)
         InterruptM3_intRegister(VirtQueue_isr);

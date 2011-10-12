@@ -67,6 +67,7 @@ enum rproc_fw_resource_type {
     RSC_IRQ         = 3,
     RSC_TRACE       = 4,
     RSC_BOOTADDR    = 5,
+    RSC_VRING       = 6,
 };
 
 enum rproc_fw_section_type {
@@ -77,10 +78,12 @@ enum rproc_fw_section_type {
 
 struct rproc_fw_resource {
     u32 type;
+    u32 id;
     u64 da;
     u64 pa;
     u32 len;
     u32 flags;
+    u8 reserved[16];
     u8 name[48];
 } __packed;
 
