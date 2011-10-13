@@ -147,10 +147,7 @@ struct resource resources[] = {
      */
     { TYPE_VRING, 0, VRING0_DA, 0, 0, 0, 0x3000, 0, 0,0,0,0,"vring:sysm3->mpu"},
     { TYPE_VRING, 1, VRING1_DA, 0, 0, 0, 0x3000, 0, 0,0,0,0,"vring:mpu->sysm3"},
-    { TYPE_VRING, 2, VRING2_DA, 0, 0, 0, 0x3000, 0, 0,0,0,0,"vring:appm3->mpu"},
-    { TYPE_VRING, 3, VRING3_DA, 0, 0, 0, 0x3000, 0, 0,0,0,0,"vring:mpu->appm3"},
     { TYPE_TRACE, 0, 0, 0, 0, 0, 0x8000, 0, 0,0,0,0,"trace:sysm3"},
-    { TYPE_TRACE, 1, 1, 0, 0, 0, 0x8000, 0, 0,0,0,0,"trace:appm3"},
     /* This is an evil hack that will be removed once Linux DMA API is ready */
     { TYPE_DEVMEM, 0, IPC_DA, 0, IPC_PA, 0, SZ_1M, 0, 0,0,0,0,"IPU_MEM_IPC"},
     /* These entries are essentiall IOMMU configuration requests */
