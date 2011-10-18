@@ -108,14 +108,19 @@
 #  define DATA_SIZE  (SZ_1M * 96)  /* OMX is a little piggy */
 #endif
 
+/* Indices of rpmsg virtio features we support */
+#define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
+
+/* flip up bits whose indices represent features we support */
+#define IPU_C0_FEATURES         1
+
 /* Resource info: Must match include/linux/remoteproc.h: */
 #define TYPE_CARVEOUT    0
 #define TYPE_DEVMEM      1
-#define TYPE_DEVICE      2
-#define TYPE_IRQ         3
-#define TYPE_TRACE       4
-#define TYPE_ENTRYPOINT  5
-#define TYPE_VRING       6
+#define TYPE_TRACE       2
+#define TYPE_VRING       3
+#define TYPE_VIRTIO_HDR  4
+#define TYPE_VIRTIO_CFG  5
 
 struct resource {
     u32 type;
@@ -148,8 +153,8 @@ struct resource resources[] = {
     /*
      * Auxillary entries
      */
-    { TYPE_VRING, 0, VRING0_DA, 0, 0, 0, 0x3000, 0, 0,0,0,0,"vring:sysm3->mpu"},
-    { TYPE_VRING, 1, VRING1_DA, 0, 0, 0, 0x3000, 0, 0,0,0,0,"vring:mpu->sysm3"},
+    { TYPE_VRING, 0, VRING0_DA, 0, 0, 0, 0x3000, 0,0,0,0,0,"vring:sysm3->mpu"},
+    { TYPE_VRING, 1, VRING1_DA, 0, 0, 0, 0x3000, 0,0,0,0,0,"vring:mpu->sysm3"},
     { TYPE_TRACE, 0, TRACEBUFADDR,0,0,0, 0x8000, 0,0,0,0,0,"trace:sysm3"},
     /* This is an evil hack that will be removed once Linux DMA API is ready */
     { TYPE_DEVMEM, 0, IPC_DA, 0, IPC_PA, 0, SZ_1M, 0, 0,0,0,0,"IPU_MEM_IPC"},

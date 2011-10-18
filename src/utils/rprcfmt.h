@@ -63,11 +63,10 @@ typedef unsigned char u8;
 enum rproc_fw_resource_type {
     RSC_CARVEOUT    = 0,
     RSC_DEVMEM      = 1,
-    RSC_DEVICE      = 2,
-    RSC_IRQ         = 3,
-    RSC_TRACE       = 4,
-    RSC_BOOTADDR    = 5,
-    RSC_VRING       = 6,
+    RSC_TRACE       = 2,
+    RSC_VRING       = 3,
+    RSC_VIRTIO_HDR  = 4,
+    RSC_VIRTIO_CFG  = 5,
 };
 
 enum rproc_fw_section_type {
