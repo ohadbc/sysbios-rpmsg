@@ -56,3 +56,8 @@ clean:
 	cd src/utils/elfload; make clean
 	cd src/utils; make clean
 	cd ../..
+
+.PHONY: tags
+tags:
+	ctags -R src/
+	cscope -R -b -ssrc/
