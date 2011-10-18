@@ -133,6 +133,9 @@ struct resource {
     char name[48];
 };
 
+extern char * xdc_runtime_SysMin_Module_State_0_outbuf__A;
+#define TRACEBUFADDR (u32)&xdc_runtime_SysMin_Module_State_0_outbuf__A
+
 #pragma DATA_SECTION(resources, ".resource_table")
 #pragma DATA_ALIGN(resources, 4096)
 struct resource resources[] = {
@@ -147,7 +150,7 @@ struct resource resources[] = {
      */
     { TYPE_VRING, 0, VRING0_DA, 0, 0, 0, 0x3000, 0, 0,0,0,0,"vring:sysm3->mpu"},
     { TYPE_VRING, 1, VRING1_DA, 0, 0, 0, 0x3000, 0, 0,0,0,0,"vring:mpu->sysm3"},
-    { TYPE_TRACE, 0, 0, 0, 0, 0, 0x8000, 0, 0,0,0,0,"trace:sysm3"},
+    { TYPE_TRACE, 0, TRACEBUFADDR,0,0,0, 0x8000, 0,0,0,0,0,"trace:sysm3"},
     /* This is an evil hack that will be removed once Linux DMA API is ready */
     { TYPE_DEVMEM, 0, IPC_DA, 0, IPC_PA, 0, SZ_1M, 0, 0,0,0,0,"IPU_MEM_IPC"},
     /* These entries are essentiall IOMMU configuration requests */
