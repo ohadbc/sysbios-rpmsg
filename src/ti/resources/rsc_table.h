@@ -85,9 +85,9 @@
 #define IPC_PA                  0xA9800000
 
 #define VRING0_DA               0xA0000000
-#define VRING1_DA               0xA0003000
+#define VRING1_DA               0xA0004000
 #define VRING2_DA               0xA0008000
-#define VRING3_DA               0xA000b000
+#define VRING3_DA               0xA000C000
 #define BUFS0_DA                0xA0040000
 #define BUFS1_DA                0xA0080000
 
@@ -107,6 +107,9 @@
 #ifndef DATA_SIZE
 #  define DATA_SIZE  (SZ_1M * 96)  /* OMX is a little piggy */
 #endif
+
+/* virtio ids: keep in sync with the linux "include/linux/virtio_ids.h" */
+#define VIRTIO_ID_RPMSG		7 /* virtio remote processor messaging */
 
 /* Indices of rpmsg virtio features we support */
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
@@ -153,6 +156,7 @@ struct resource resources[] = {
     /*
      * Auxillary entries
      */
+    { TYPE_VIRTIO_HDR, 0,IPU_C0_FEATURES,0,0,0,0,0,0,0,0,0,"vhdr:rpmsg"},
     { TYPE_VRING, 0, VRING0_DA, 0, 0, 0, 0x3000, 0,0,0,0,0,"vring:sysm3->mpu"},
     { TYPE_VRING, 1, VRING1_DA, 0, 0, 0, 0x3000, 0,0,0,0,0,"vring:mpu->sysm3"},
     { TYPE_TRACE, 0, TRACEBUFADDR,0,0,0, 0x8000, 0,0,0,0,0,"trace:sysm3"},

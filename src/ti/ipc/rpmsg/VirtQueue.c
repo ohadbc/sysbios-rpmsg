@@ -81,9 +81,9 @@
 
 /* Predefined device addresses */
 #define IPU_MEM_VRING0          0xA0000000
-#define IPU_MEM_VRING1          0xA0003000
+#define IPU_MEM_VRING1          0xA0004000
 #define IPU_MEM_VRING2          0xA0008000
-#define IPU_MEM_VRING3          0xA000b000
+#define IPU_MEM_VRING3          0xA000c000
 
 /*
  * enum - Predefined Mailbox Messages
