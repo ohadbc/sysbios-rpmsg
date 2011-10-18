@@ -8,3 +8,9 @@ Make.log
 .imports
 .imports.xml
 .tools-*
+*~
+bios_6_32_01_38/*
+cgt6x-7.2.0/*
+cgtarm-4.9.0/*
+ipc_1_23_01_26/*
+xdctools_3_22_01_21/*
