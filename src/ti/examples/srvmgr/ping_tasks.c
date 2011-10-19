@@ -70,6 +70,18 @@ Void copyTaskFxn(UArg arg0, UArg arg1)
     /* Create the messageQ for receiving (and get our endpoint for sending). */
     handle = MessageQCopy_create(arg0, &myEndpoint);
 
+    /*
+     * Yeah, this is horrible.
+     *
+     * Without it, we might try to send a message before buffers are
+     * available in the ring, and then the code just bluntly fails.
+     *
+     * The real fix is to pause initialization until buffers are available,
+     * or allow users to get notified when a buffer is available after
+     * they failed getting one.
+     */
+    Task_sleep(500);
+
     NameMap_register("rpmsg-client-sample", arg0);
 
     for (i = 0; i < APP_NUM_ITERATIONS; i++) {
