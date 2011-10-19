@@ -122,7 +122,7 @@
 #define TYPE_DEVMEM      1
 #define TYPE_TRACE       2
 #define TYPE_VRING       3
-#define TYPE_VIRTIO_HDR  4
+#define TYPE_VIRTIO_DEV  4
 #define TYPE_VIRTIO_CFG  5
 
 struct resource {
@@ -148,21 +148,26 @@ extern char * xdc_runtime_SysMin_Module_State_0_outbuf__A;
 #pragma DATA_ALIGN(resources, 4096)
 struct resource resources[] = {
     /*
-     * memory allocation entries must come first. will be allocated
-     * via CMA bofore M3 is booted.
+     * Virtio entries must come first.
+     */
+    { TYPE_VIRTIO_DEV,0,IPU_C0_FEATURES,0,0,0,0,VIRTIO_ID_RPMSG,0,0,0,0,"vdev:rpmsg"},
+    { TYPE_VRING, 0, VRING0_DA, 0, 0, 0, 0x3000, 0,0,0,0,0,"vring:sysm3->mpu"},
+    { TYPE_VRING, 1, VRING1_DA, 0, 0, 0, 0x3000, 0,0,0,0,0,"vring:mpu->sysm3"},
+    /*
+     * Contig Memory allocation entries must come after the virtio entries,
+     * but before the reset of the gang.
      */
     { TYPE_CARVEOUT, 0, DATA_DA, 0, 0, 0, DATA_SIZE, 0,0,0,0,0, "IPU_MEM_DATA"},
     { TYPE_CARVEOUT, 0, TEXT_DA, 0, 0, 0, SZ_4M, 0, 0,0,0,0,"IPU_MEM_TEXT"},
     /*
-     * Auxillary entries
+     * Misc entries
      */
-    { TYPE_VIRTIO_HDR, 0,IPU_C0_FEATURES,0,0,0,0,0,0,0,0,0,"vhdr:rpmsg"},
-    { TYPE_VRING, 0, VRING0_DA, 0, 0, 0, 0x3000, 0,0,0,0,0,"vring:sysm3->mpu"},
-    { TYPE_VRING, 1, VRING1_DA, 0, 0, 0, 0x3000, 0,0,0,0,0,"vring:mpu->sysm3"},
     { TYPE_TRACE, 0, TRACEBUFADDR,0,0,0, 0x8000, 0,0,0,0,0,"trace:sysm3"},
-    /* This is an evil hack that will be removed once Linux DMA API is ready */
+    /*
+     * IOMMU configuration entries
+     */
+    /* an evil hack that will be removed once the Linux DMA API is ready */
     { TYPE_DEVMEM, 0, IPC_DA, 0, IPC_PA, 0, SZ_1M, 0, 0,0,0,0,"IPU_MEM_IPC"},
-    /* These entries are essentiall IOMMU configuration requests */
     { TYPE_DEVMEM, 0, IPU_TILER_MODE_0_1, 0, L3_TILER_MODE_0_1, 0, SZ_256M,
        0, 0,0,0,0,"IPU_TILER_MODE_0_1"},
     { TYPE_DEVMEM, 0, IPU_TILER_MODE_2, 0, L3_TILER_MODE_2, 0, SZ_128M,
