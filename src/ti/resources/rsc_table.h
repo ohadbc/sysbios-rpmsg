@@ -91,6 +91,14 @@
 #define BUFS0_DA                0xA0040000
 #define BUFS1_DA                0xA0080000
 
+/*
+ * sizes of the virtqueues (expressed in number of buffers supported,
+ * and must be power of 2)
+ */
+#define VQ0_SIZE                256
+#define VQ1_SIZE                256
+#define VQ2_SIZE                256
+#define VQ3_SIZE                256
 
 /* Size constants must match those used on host: include/asm-generic/sizes.h */
 #define SZ_1M                           0x00100000
@@ -151,8 +159,8 @@ struct resource resources[] = {
      * Virtio entries must come first.
      */
     { TYPE_VIRTIO_DEV,0,IPU_C0_FEATURES,0,0,0,0,VIRTIO_ID_RPMSG,0,0,0,0,"vdev:rpmsg"},
-    { TYPE_VRING, 0, VRING0_DA, 0, 0, 0, 0x3000, 0,0,0,0,0,"vring:sysm3->mpu"},
-    { TYPE_VRING, 1, VRING1_DA, 0, 0, 0, 0x3000, 0,0,0,0,0,"vring:mpu->sysm3"},
+    { TYPE_VRING, 0, VRING0_DA, 0, 0, 0,VQ0_SIZE,0,0,0,0,0,"vring:sysm3->mpu"},
+    { TYPE_VRING, 1, VRING1_DA, 0, 0, 0,VQ1_SIZE,0,0,0,0,0,"vring:mpu->sysm3"},
     /*
      * Contig Memory allocation entries must come after the virtio entries,
      * but before the reset of the gang.

@@ -86,6 +86,15 @@
 #define IPU_MEM_VRING3          0xA000c000
 
 /*
+ * Sizes of the virtqueues (expressed in number of buffers supported,
+ * and must be power of two)
+ */
+#define VQ0_SIZE                256
+#define VQ1_SIZE                256
+#define VQ2_SIZE                256
+#define VQ3_SIZE                256
+
+/*
  * enum - Predefined Mailbox Messages
  *
  * @RP_MSG_MBOX_READY: informs the M3's that we're up and running. will be
@@ -121,7 +130,7 @@ enum {
 };
 
 #define DIV_ROUND_UP(n,d)   (((n) + (d) - 1) / (d))
-#define RP_MSG_NUM_BUFS     (256)
+#define RP_MSG_NUM_BUFS     (VQ0_SIZE) /* must be power of two */
 #define RP_MSG_BUF_SIZE     (512)
 #define RP_MSG_BUFS_SPACE   (RP_MSG_NUM_BUFS * RP_MSG_BUF_SIZE * 2)
 
