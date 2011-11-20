@@ -62,6 +62,7 @@ Void copyTaskFxn(UArg arg0, UArg arg1)
     UInt16                 dstProc;
     UInt16                 len;
     Int                    i;
+    Char                   *name;
 
     System_printf("copyTask %d: Entered...:\n", arg0);
 
@@ -82,7 +83,8 @@ Void copyTaskFxn(UArg arg0, UArg arg1)
      */
     Task_sleep(500);
 
-    NameMap_register("rpmsg-client-sample", arg0);
+    name = arg0 == 50 ? "rpmsg-client-sample" : "rpmsg-proto";
+    NameMap_register(name, arg0);
 
     for (i = 0; i < APP_NUM_ITERATIONS; i++) {
        /* Await a character message: */
