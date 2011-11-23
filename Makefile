@@ -48,14 +48,9 @@ export XDCPATH	= $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
 
 all:
 	$(XDCROOT)/xdc -k -j $(j) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
-	cd src/utils/elfload; make
-	cd src/utils; make
 
 clean:
 	$(XDCROOT)/xdc clean -Pr src
-	cd src/utils/elfload; make clean
-	cd src/utils; make clean
-	cd ../..
 
 .PHONY: tags
 tags:
