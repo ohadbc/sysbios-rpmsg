@@ -161,6 +161,10 @@ struct resource resources[] = {
     { TYPE_VIRTIO_DEV,0,IPU_C0_FEATURES,0,0,0,0,VIRTIO_ID_RPMSG,0,0,0,0,"vdev:rpmsg"},
     { TYPE_VRING, 0, VRING0_DA, 0, 0, 0,VQ0_SIZE,0,0,0,0,0,"vring:sysm3->mpu"},
     { TYPE_VRING, 1, VRING1_DA, 0, 0, 0,VQ1_SIZE,0,0,0,0,0,"vring:mpu->sysm3"},
+    /* APPM3 */
+    { TYPE_VIRTIO_DEV,1,IPU_C0_FEATURES,0,0,0,0,VIRTIO_ID_RPMSG,0,0,0,0,"vdev:rpmsg"},
+    { TYPE_VRING, 2, VRING2_DA, 0, 0, 0,VQ2_SIZE,0,0,0,0,0,"vring:appm3->mpu"},
+    { TYPE_VRING, 3, VRING3_DA, 0, 0, 0,VQ3_SIZE,0,0,0,0,0,"vring:mpu->appm3"},
     /*
      * Contig Memory allocation entries must come after the virtio entries,
      * but before the reset of the gang.
@@ -171,6 +175,12 @@ struct resource resources[] = {
      * Misc entries
      */
     { TYPE_TRACE, 0, TRACEBUFADDR,0,0,0, 0x8000, 0,0,0,0,0,"trace:sysm3"},
+    /*
+     * HACK ! the trace address is the value of:
+     * nm ./src/ti/examples/srvmgr/ti_platform_omap4430_core1/debug/test_omx_appm3.xem3 | grep outbuf | cut -d ' ' -f 1
+     * So this one is a big TODO which should be fixed
+     */
+    { TYPE_TRACE, 0, 0x80160000,0,0,0, 0x8000, 0,0,0,0,0,"trace:appm3"},
     /*
      * IOMMU configuration entries
      */
