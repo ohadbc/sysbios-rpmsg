@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, Texas Instruments Incorporated
+# Copyright (c) 2011-2012 Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,13 +46,21 @@ export XDCROOT	= $(XDCDIST_TREE)
 
 export XDCPATH	= $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
 
+# Note M3 is special cased here as it's the only ISA
+# src/utils knows how to build
 all:
-	$(XDCROOT)/xdc -k -j $(j) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
+	$(XDCROOT)/xdc -j $(j) -Pr src
 	cd src/utils/elfload; make
+ifneq ($(TMS470CGTOOLPATH),)
 	cd src/utils; make
+endif
 
+# Note M3 is special cased here as it's the only ISA
+# src/utils knows how to build
 clean:
 	$(XDCROOT)/xdc clean -Pr src
 	cd src/utils/elfload; make clean
+ifneq ($(TMS470CGTOOLPATH),)
 	cd src/utils; make clean
+endif
 	cd ../..

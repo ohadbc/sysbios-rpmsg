@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Texas Instruments Incorporated
+ * Copyright (c) 2011-2012, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,49 +34,49 @@
  *  Sample Build configuration script
  */
 
-/* Default tools locations */
-var armcgt_linux   = "/opt/TI/TMS470CGT4.9.0"
-var dspcgt_linux   = "/opt/TI/C6000CGT7.2.0"
-var armcgt_windows = "C:/Program Files/Texas Instruments/TMS470 Code Generation Tools 4.9.0"
-var dspcgt_windows = "C:/Program Files/Texas Instruments/C6000 Code Generation Tools 7.2.0"
-
 /* Exported tools locations to supercede defaults */
-var armcgt_env = java.lang.System.getenv("TMS470CGTOOLPATH");
-var dspcgt_env = java.lang.System.getenv("C6000CGTOOLPATH");
+var arm_cgtools_rootdir = java.lang.System.getenv("TMS470CGTOOLPATH");
+var c6x_cgtools_rootdir = java.lang.System.getenv("C6000CGTOOLPATH");
 
-/* Configure code generation tools paths */
-if (Build.hostOSName == 'Linux') {
-    var arm_cgtools_rootdir = armcgt_env ? armcgt_env : armcgt_linux;
-    var c6x_cgtools_rootdir = dspcgt_env ? dspcgt_env : dspcgt_linux;
-} else {
-    var arm_cgtools_rootdir = armcgt_env ? armcgt_env : armcgt_windows;
-    var c6x_cgtools_rootdir = dspcgt_env ? dspcgt_env : dspcgt_windows;
+//print("arm_cgtools_rootdir = " + arm_cgtools_rootdir);
+//print("c6x_cgtools_rootdir = " + c6x_cgtools_rootdir);
+
+if (c6x_cgtools_rootdir != "") {
+    /* Setup for C64T target */
+    var C64T = xdc.useModule('ti.targets.elf.C64T');
+    C64T.rootDir = c6x_cgtools_rootdir;
+    C64T.ccOpts.suffix += " -mi10 -mo ";
+    /* Set default platform and list of all interested platforms for c64T */
+    C64T.platforms = ["ti.platform.omap4430.dsp"];
+    C64T.platform = C64T.platforms[0];
+
+    Build.targets.$add(C64T);
 }
 
-/* Setup for C64T target */
-var C64T = xdc.useModule('ti.targets.elf.C64T');
-C64T.rootDir = c6x_cgtools_rootdir;
-C64T.ccOpts.suffix += " -mi10 -mo ";
-/* Set default platform and list of all interested platforms for c64T */
-C64T.platforms = [
-                    "ti.platform.omap4430.dsp",
-                ];
-C64T.platform = C64T.platforms[0];
-
+if (arm_cgtools_rootdir != "") {
 /* Setup for M3 target */
-var M3 = xdc.useModule('ti.targets.arm.elf.M3');
-M3.rootDir = arm_cgtools_rootdir;
-M3.ccOpts.suffix += " --embed_inline_assembly -ms -pds=71";
-M3.lnkOpts.prefix += " --retain=.resource_table";
-/* Set default platform and list of all interested platforms for M3 */
-M3.platforms = [
-                  "ti.platform.omap4430.core0",
-                  "ti.platform.omap4430.core1",
-               ];
-M3.platform = M3.platforms[0];
+    var M3 = xdc.useModule('ti.targets.arm.elf.M3');
+    M3.rootDir = arm_cgtools_rootdir;
+    M3.ccOpts.suffix += " --embed_inline_assembly -ms -pds=71";
+    M3.lnkOpts.prefix += " --retain=.resource_table";
+    /* Set default platform and list of all interested platforms for M3 */
+    M3.platforms = [
+        "ti.platform.omap4430.core0",
+        "ti.platform.omap4430.core1"
+    ];
+    M3.platform = M3.platforms[0];
 
-/* Uncomment the required targets */
-Build.targets = [
-                    //C64T,
-                    M3,
-                ];
+    Build.targets.$add(M3);
+}
+
+/* Eliminating profiles that aren't debug or release */
+for (var t = 0; t < Build.targets.length; t++) {
+//    print("Inspecting target " + Build.targets[t]);
+    for (prof in Build.targets[t].profiles) {
+//      print("Inspecting profile " + prof);
+        if ((prof != "debug") && (prof != "release")) {
+//          print("Deleting profile " + Build.targets[t].profiles[prof]);
+            delete Build.targets[t].profiles[prof];
+        }
+    }
+}
