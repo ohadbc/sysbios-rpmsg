@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, Texas Instruments Incorporated
+# Copyright (c) 2011-2012 Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@ export XDCROOT	= $(XDCDIST_TREE)
 export XDCPATH	= $(BIOSPROD)/packages;$(IPCPROD)/packages;./src;
 
 all:
-	$(XDCROOT)/xdc -k -j $(j) -P `$(XDCROOT)/bin/xdcpkg src/ti |  egrep -v -e "/tests|/apps" | xargs`
+	$(XDCROOT)/xdc -j $(j) -Pr src
 
 clean:
 	$(XDCROOT)/xdc clean -Pr src
