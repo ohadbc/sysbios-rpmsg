@@ -82,7 +82,7 @@
 #define DATA_DA                 0x80000000
 
 #define IPC_DA                  0xA0000000
-#define IPC_PA                  0xA9800000
+#define IPC_PA                  0xA9000000
 
 #define VRING0_DA               0xA0000000
 #define VRING1_DA               0xA0004000
