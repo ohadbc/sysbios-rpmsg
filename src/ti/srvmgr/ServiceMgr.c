@@ -306,18 +306,6 @@ void serviceMgrTaskFxn(UArg arg0, UArg arg1)
 
     System_printf("serviceMgr: started on port: %d\n", SERVICE_MGR_PORT);
 
-    /*
-     * Yeah, this is horrible.
-     *
-     * Without it, we might try to send a message before buffers are
-     * available in the ring, and then the code just bluntly fails.
-     *
-     * The real fix is to pause initialization until buffers are available,
-     * or allow users to get notified when a buffer is available after
-     * they failed getting one.
-     */
-    Task_sleep(500);
-
     NameMap_register("rpmsg-omx", SERVICE_MGR_PORT);
 
     while (1) {
