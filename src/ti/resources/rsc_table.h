@@ -116,6 +116,8 @@
 #  define DATA_SIZE  (SZ_1M * 96)  /* OMX is a little piggy */
 #endif
 
+#  define TEXT_SIZE  (SZ_4M)
+
 /* virtio ids: keep in sync with the linux "include/linux/virtio_ids.h" */
 #define VIRTIO_ID_RPMSG		7 /* virtio remote processor messaging */
 
@@ -129,24 +131,92 @@
 #define TYPE_CARVEOUT    0
 #define TYPE_DEVMEM      1
 #define TYPE_TRACE       2
-#define TYPE_VRING       3
-#define TYPE_VIRTIO_DEV  4
-#define TYPE_VIRTIO_CFG  5
+#define TYPE_VDEV  3
 
-struct resource {
-    u32 type;
-    u32 id;
-    u32 da_low;       /* Device (Ducati virtual) Address */
-    u32 da_high;
-    u32 pa_low;       /* Physical Address */
-    u32 pa_high;
-    u32 len;
-    u32 flags;
-    u32 pad1;
-    u32 pad2;
-    u32 pad3;
-    u32 pad4;
-    char name[48];
+struct fw_rsc_carveout {
+	u32 type;
+	u32 da;
+	u32 pa;
+	u32 len;
+	u32 flags;
+	char name[32];
+};
+
+struct fw_rsc_devmem {
+	u32 type;
+	u32 da;
+	u32 pa;
+	u32 len;
+	u32 flags;
+	char name[32];
+};
+
+struct fw_rsc_trace {
+	u32 type;
+	u32 da;
+	u32 len;
+	char name[32];
+};
+
+struct fw_rsc_vdev_vring {
+	u32 da;
+	u32 pa;
+	u32 num;
+};
+
+struct fw_rsc_vdev {
+	u32 type;
+	u32 id;
+	u32 dfeatures;
+	u32 gfeatures;
+	u32 config_len;
+	char status;
+	char num_of_vrings;
+	char reserved[2];
+};
+
+struct resource_table {
+	u32 version;
+	u32 num;
+	u32 offset[12];
+
+	/* rpmsg vdev entry */
+	struct fw_rsc_vdev rpmsg_vdev;
+	struct fw_rsc_vdev_vring rpmsg_vring0;
+	struct fw_rsc_vdev_vring rpmsg_vring1;
+
+	/* data carveout entry */
+	struct fw_rsc_carveout data_cout;
+
+	/* text carveout entry */
+	struct fw_rsc_carveout text_cout;
+
+	/* trace entry */
+	struct fw_rsc_trace trace;
+
+	/* devmem entry */
+	struct fw_rsc_devmem devmem0;
+
+	/* devmem entry */
+	struct fw_rsc_devmem devmem1;
+
+	/* devmem entry */
+	struct fw_rsc_devmem devmem2;
+
+	/* devmem entry */
+	struct fw_rsc_devmem devmem3;
+
+	/* devmem entry */
+	struct fw_rsc_devmem devmem4;
+
+	/* devmem entry */
+	struct fw_rsc_devmem devmem5;
+
+	/* devmem entry */
+	struct fw_rsc_devmem devmem6;
+
+	/* devmem entry */
+	struct fw_rsc_devmem devmem7;
 };
 
 extern char * xdc_runtime_SysMin_Module_State_0_outbuf__A;
@@ -154,42 +224,93 @@ extern char * xdc_runtime_SysMin_Module_State_0_outbuf__A;
 
 #pragma DATA_SECTION(resources, ".resource_table")
 #pragma DATA_ALIGN(resources, 4096)
-struct resource resources[] = {
-    /*
-     * Virtio entries must come first.
-     */
-    { TYPE_VIRTIO_DEV,0,IPU_C0_FEATURES,0,0,0,0,VIRTIO_ID_RPMSG,0,0,0,0,"vdev:rpmsg"},
-    { TYPE_VRING, 0, VRING0_DA, 0, 0, 0,VQ0_SIZE,0,0,0,0,0,"vring:sysm3->mpu"},
-    { TYPE_VRING, 1, VRING1_DA, 0, 0, 0,VQ1_SIZE,0,0,0,0,0,"vring:mpu->sysm3"},
-    /*
-     * Contig Memory allocation entries must come after the virtio entries,
-     * but before the reset of the gang.
-     */
-    { TYPE_CARVEOUT, 0, DATA_DA, 0, 0, 0, DATA_SIZE, 0,0,0,0,0, "IPU_MEM_DATA"},
-    { TYPE_CARVEOUT, 0, TEXT_DA, 0, 0, 0, SZ_4M, 0, 0,0,0,0,"IPU_MEM_TEXT"},
-    /*
-     * Misc entries
-     */
-    { TYPE_TRACE, 0, TRACEBUFADDR,0,0,0, 0x8000, 0,0,0,0,0,"trace:sysm3"},
-    /*
-     * IOMMU configuration entries
-     */
-    /* an evil hack that will be removed once the Linux DMA API is ready */
-    { TYPE_DEVMEM, 0, IPC_DA, 0, IPC_PA, 0, SZ_1M, 0, 0,0,0,0,"IPU_MEM_IPC"},
-    { TYPE_DEVMEM, 0, IPU_TILER_MODE_0_1, 0, L3_TILER_MODE_0_1, 0, SZ_256M,
-       0, 0,0,0,0,"IPU_TILER_MODE_0_1"},
-    { TYPE_DEVMEM, 0, IPU_TILER_MODE_2, 0, L3_TILER_MODE_2, 0, SZ_128M,
-       0, 0,0,0,0,"IPU_TILER_MODE_2"},
-    { TYPE_DEVMEM, 0, IPU_TILER_MODE_3, 0, L3_TILER_MODE_3, 0, SZ_128M,
-       0, 0,0,0,0,"IPU_TILER_MODE_3"},
-    { TYPE_DEVMEM, 0, IPU_PERIPHERAL_L4CFG, 0, L4_PERIPHERAL_L4CFG, 0, SZ_16M,
-       0, 0,0,0,0,"IPU_PERIPHERAL_L4CFG"},
-    { TYPE_DEVMEM, 0, IPU_PERIPHERAL_L4PER, 0, L4_PERIPHERAL_L4PER, 0, SZ_16M,
-       0,0,0,0,0,"IPU_PERIPHERAL_L4PER"},
-    { TYPE_DEVMEM, 0, IPU_IVAHD_CONFIG, 0, L3_IVAHD_CONFIG, 0, SZ_16M,
-       0, 0,0,0,0,"IPU_IVAHD_CONFIG"},
-    { TYPE_DEVMEM, 0, IPU_IVAHD_SL2, 0, L3_IVAHD_SL2, 0, SZ_16M,
-       0, 0,0,0,0,"IPU_IVAHD_SL2"},
+
+struct resource_table resources = {
+	1, /* we're the first version that implements this */
+	12, /* number of entries in the table */
+	/* offsets to entries */
+	{
+		offsetof(struct resource_table, rpmsg_vdev),
+		offsetof(struct resource_table, data_cout),
+		offsetof(struct resource_table, text_cout),
+		offsetof(struct resource_table, trace),
+		offsetof(struct resource_table, devmem0),
+		offsetof(struct resource_table, devmem1),
+		offsetof(struct resource_table, devmem2),
+		offsetof(struct resource_table, devmem3),
+		offsetof(struct resource_table, devmem4),
+		offsetof(struct resource_table, devmem5),
+		offsetof(struct resource_table, devmem6),
+		offsetof(struct resource_table, devmem7),
+	},
+
+	/* rpmsg vdev entry */
+	{
+		TYPE_VDEV,
+		VIRTIO_ID_RPMSG, IPU_C0_FEATURES, 0, 0, 0, 2, { 0, 0 },
+		/* no config data */
+	},
+	/* the two vrings */
+	{ VRING0_DA, 0, VQ0_SIZE },
+	{ VRING1_DA, 0, VQ1_SIZE },
+
+	{
+		TYPE_CARVEOUT, DATA_DA, 0, DATA_SIZE, 0, "IPU_MEM_DATA",
+	},
+
+	{
+		TYPE_CARVEOUT, TEXT_DA, 0, TEXT_SIZE, 0, "IPU_MEM_DATA",
+	},
+
+	{
+		TYPE_TRACE, TRACEBUFADDR, 0x8000, "trace:sysm3",
+	},
+
+	{
+		TYPE_DEVMEM, IPC_DA, IPC_PA, SZ_1M, 0, "IPU_MEM_IPC",
+	},
+
+	{
+		TYPE_DEVMEM,
+		IPU_TILER_MODE_0_1, L3_TILER_MODE_0_1,
+		SZ_256M, 0, "IPU_TILER_MODE_0_1",
+	},
+
+	{
+		TYPE_DEVMEM,
+		IPU_TILER_MODE_2, L3_TILER_MODE_2,
+		SZ_128M, 0, "IPU_TILER_MODE_2",
+	},
+
+	{
+		TYPE_DEVMEM,
+		IPU_TILER_MODE_3, L3_TILER_MODE_3,
+		SZ_128M, 0, "IPU_TILER_MODE_3",
+	},
+
+	{
+		TYPE_DEVMEM,
+		IPU_PERIPHERAL_L4CFG, L4_PERIPHERAL_L4CFG,
+		SZ_16M, 0, "IPU_PERIPHERAL_L4CFG",
+	},
+
+	{
+		TYPE_DEVMEM,
+		IPU_PERIPHERAL_L4PER, L4_PERIPHERAL_L4PER,
+		SZ_16M, 0, "IPU_PERIPHERAL_L4PER",
+	},
+
+	{
+		TYPE_DEVMEM,
+		IPU_IVAHD_CONFIG, L3_IVAHD_CONFIG,
+		SZ_16M, 0, "IPU_IVAHD_CONFIG",
+	},
+
+	{
+		TYPE_DEVMEM,
+		IPU_IVAHD_SL2, L3_IVAHD_SL2,
+		SZ_16M, 0, "IPU_IVAHD_SL2",
+	},
 };
 
 #endif /* _RSC_TABLE_H_ */
