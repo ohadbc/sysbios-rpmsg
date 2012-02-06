@@ -267,6 +267,11 @@ Int main(Int argc, char* argv[])
     start_resmgr_task();
 #endif
 
+#if CORE0
+    extern void initRpmsgCio();
+    initRpmsgCio();
+#endif
+
     BIOS_start();
 
     return (0);
