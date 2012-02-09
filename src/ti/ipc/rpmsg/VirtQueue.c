@@ -82,8 +82,12 @@
 /* Predefined device addresses */
 #define IPU_MEM_VRING0          0xA0000000
 #define IPU_MEM_VRING1          0xA0004000
-#define IPU_MEM_VRING2          0xA0008000
-#define IPU_MEM_VRING3          0xA000c000
+
+#define CONSOLE_VRING0_PA       0xA0008000
+#define CONSOLE_VRING1_PA       0xA000c000
+
+#define IPU_MEM_VRING2          0xA0010000
+#define IPU_MEM_VRING3          0xA0014000
 
 /*
  * Sizes of the virtqueues (expressed in number of buffers supported,
@@ -151,8 +155,12 @@ enum {
 
 #define ID_SYSM3_TO_A9      0
 #define ID_A9_TO_SYSM3      1
-#define ID_APPM3_TO_A9      2
-#define ID_A9_TO_APPM3      3
+
+#define CONSOLE_SYSM3_TO_A9 2
+#define CONSOLE_A9_TO_SYSM3 3
+
+#define ID_APPM3_TO_A9      200
+#define ID_A9_TO_APPM3      201
 
 typedef struct VirtQueue_Object {
     /* Id for this VirtQueue_Object */
@@ -177,7 +185,6 @@ typedef struct VirtQueue_Object {
     UInt16                  procId;
 } VirtQueue_Object;
 
-static UInt numQueues = 0;
 static struct VirtQueue_Object *queueRegistry[NUM_QUEUES];
 
 static UInt16 hostProcId;
@@ -216,7 +223,7 @@ Void VirtQueue_kick(VirtQueue_Handle vq)
 /*!
  * ======== VirtQueue_addUsedBuf ========
  */
-Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 head)
+Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 head, int len)
 {
     struct vring_used_elem *used;
 
@@ -230,7 +237,7 @@ Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 head)
     */
     used = &vq->vring.used->ring[vq->vring.used->idx % vq->vring.num];
     used->id = head;
-    used->len = RP_MSG_BUF_SIZE;
+    used->len = len;
 
     vq->vring.used->idx++;
 
@@ -283,7 +290,7 @@ Void *VirtQueue_getUsedBuf(VirtQueue_Object *vq)
 /*!
  * ======== VirtQueue_getAvailBuf ========
  */
-Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
+Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf, int *len)
 {
     UInt16 head;
 
@@ -301,8 +308,8 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
             return -1;
     }
 
-    /* No need to know be kicked about added buffers anymore */
-    vq->vring.used->flags |= VRING_USED_F_NO_NOTIFY;
+    /* TODO: think of adding the NO_NOTIFY optimization later on */
+    /* vq->vring.used->flags |= VRING_USED_F_NO_NOTIFY; */
 
     /*
      * Grab the next descriptor number they're advertising, and increment
@@ -311,6 +318,7 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
     head = vq->vring.avail->ring[vq->last_avail_idx++ % vq->vring.num];
 
     *buf = mapPAtoVA(vq->vring.desc[head].addr);
+    *len = vq->vring.desc[head].len;
 
     return (head);
 }
@@ -320,7 +328,6 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf)
  */
 Void VirtQueue_disableCallback(VirtQueue_Object *vq)
 {
-    //TODO
     Log_print0(Diags_USER1, "VirtQueue_disableCallback called.");
 }
 
@@ -403,7 +410,7 @@ Void VirtQueue_isr(UArg msg)
  * ======== VirtQueue_create ========
  */
 VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
-        UInt16 remoteProcId)
+        UInt16 remoteProcId, int vqid)
 {
     VirtQueue_Object *vq;
     void *vring_phys;
@@ -417,21 +424,34 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
     }
 
     vq->callback = callback;
-    vq->id = numQueues++;
+    vq->id = vqid;
     vq->procId = remoteProcId;
     vq->last_avail_idx = 0;
 
     if (MultiProc_self() == appm3ProcId) {
-        vq->id += 2;
+        /* vqindices that belong to AppM3 should be big so they don't
+	 * collide with SysM3's virtqueues */
+        vq->id += 200;
     }
 
     switch (vq->id) {
+	/* sysm3 rpmsg vrings */
         case ID_SYSM3_TO_A9:
             vring_phys = (struct vring *) IPU_MEM_VRING0;
             break;
         case ID_A9_TO_SYSM3:
             vring_phys = (struct vring *) IPU_MEM_VRING1;
             break;
+
+	/* sysm3 console vrings */
+        case CONSOLE_SYSM3_TO_A9:
+            vring_phys = (struct vring *) CONSOLE_VRING0_PA;
+            break;
+        case CONSOLE_A9_TO_SYSM3:
+            vring_phys = (struct vring *) CONSOLE_VRING1_PA;
+            break;
+
+	/* appm3 rpmsg vrings */
         case ID_APPM3_TO_A9:
             vring_phys = (struct vring *) IPU_MEM_VRING2;
             break;
@@ -445,14 +465,6 @@ VirtQueue_Object *VirtQueue_create(VirtQueue_callback callback,
             RP_MSG_RING_SIZE);
 
     vring_init(&(vq->vring), RP_MSG_NUM_BUFS, vring_phys, RP_MSG_VRING_ALIGN);
-
-    /*
-     *  Don't trigger a mailbox message every time A8 makes another buffer
-     *  available
-     */
-    if (vq->procId == hostProcId || vq->procId == dspProcId) {
-        vq->vring.used->flags |= VRING_USED_F_NO_NOTIFY;
-    }
 
     queueRegistry[vq->id] = vq;
 

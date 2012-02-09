@@ -143,12 +143,13 @@ static Void MessageQCopy_swiFxn(UArg arg0, UArg arg1)
     MessageQCopy_Msg  msg;
     UInt16            dstProc = MultiProc_self();
     Bool              usedBufAdded = FALSE;
+    int len;
 
     Log_print0(Diags_ENTRY, "--> "FXNN);
 
     /* Process all available buffers: */
     while ((token = VirtQueue_getAvailBuf(transport.virtQueue_fromHost,
-                                         (Void **)&msg))
+                                         (Void **)&msg, &len))
          >= 0) {
 
         Log_print3(Diags_INFO, FXNN": \n\tReceived msg: from: 0x%x, "
@@ -159,7 +160,7 @@ static Void MessageQCopy_swiFxn(UArg arg0, UArg arg1)
         MessageQCopy_send(dstProc, msg->dstAddr, msg->srcAddr,
                          (Ptr)msg->payload, msg->dataLen);
 
-        VirtQueue_addUsedBuf(transport.virtQueue_fromHost, token);
+        VirtQueue_addUsedBuf(transport.virtQueue_fromHost, token, RP_MSG_BUF_SIZE);
         usedBufAdded = TRUE;
     }
 
@@ -167,10 +168,10 @@ static Void MessageQCopy_swiFxn(UArg arg0, UArg arg1)
        /* Tell host we've processed the buffers: */
        VirtQueue_kick(transport.virtQueue_fromHost);
     }
+
     Log_print0(Diags_EXIT, "<-- "FXNN);
 }
 #undef FXNN
-
 
 #define FXNN "callback_availBufReady"
 static Void callback_availBufReady(VirtQueue_Handle vq)
@@ -246,9 +247,11 @@ Void MessageQCopy_init(UInt16 remoteProcId)
      * the vrings toHost and fromHost:  toHost is first!
      */
     transport.virtQueue_toHost   = VirtQueue_create(callback_availBufReady,
-                                                    remoteProcId);
+                                                    remoteProcId,
+						    ID_SYSM3_TO_A9);
     transport.virtQueue_fromHost = VirtQueue_create(callback_availBufReady,
-                                                    remoteProcId);
+                                                    remoteProcId,
+						    ID_A9_TO_SYSM3);
 
     /* construct the Swi to process incoming messages: */
     transport.swiHandle = Swi_create(MessageQCopy_swiFxn, NULL, NULL);
@@ -461,6 +464,7 @@ Int MessageQCopy_send(UInt16 dstProc,
     Queue_elem        *payload;
     UInt              size;
     IArg              key;
+    int length;
 
     Log_print5(Diags_ENTRY, "--> "FXNN": (dstProc=%d, dstEndpt=%d, "
                "srcEndpt=%d, data=0x%x, len=%d", (IArg)dstProc, (IArg)dstEndpt,
@@ -472,7 +476,7 @@ Int MessageQCopy_send(UInt16 dstProc,
         /* Send to remote processor: */
         key = GateSwi_enter(module.gateSwi);  // Protect vring structs.
         token = VirtQueue_getAvailBuf(transport.virtQueue_toHost,
-                                      (Void **)&msg);
+                                      (Void **)&msg, &length);
         GateSwi_leave(module.gateSwi, key);
 
         if (token >= 0) {
@@ -485,7 +489,7 @@ Int MessageQCopy_send(UInt16 dstProc,
             msg->reserved = 0;
 
             key = GateSwi_enter(module.gateSwi);  // Protect vring structs.
-            VirtQueue_addUsedBuf(transport.virtQueue_toHost, token);
+            VirtQueue_addUsedBuf(transport.virtQueue_toHost, token, RP_MSG_BUF_SIZE);
             VirtQueue_kick(transport.virtQueue_toHost);
             GateSwi_leave(module.gateSwi, key);
         }

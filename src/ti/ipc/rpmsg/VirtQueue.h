@@ -114,7 +114,7 @@ typedef Void (*VirtQueue_callback)(VirtQueue_Handle);
  *
  *  @Returns    Returns a handle to a new initialized VirtQueue.
  */
-VirtQueue_Handle VirtQueue_create(VirtQueue_callback callback, UInt16 procId);
+VirtQueue_Handle VirtQueue_create(VirtQueue_callback callback, UInt16 procId, int vqid);
 
 
 /*!
@@ -186,7 +186,7 @@ Void *VirtQueue_getUsedBuf(VirtQueue_Handle vq);
  *
  *  @sa         VirtQueue_addUsedBuf
  */
-Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf);
+Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf, int *len);
 
 /*!
  *  @brief      Add used buffer to virtqueue's used buffer list.
@@ -199,8 +199,15 @@ Int16 VirtQueue_getAvailBuf(VirtQueue_Handle vq, Void **buf);
  *
  *  @sa         VirtQueue_getAvailBuf
  */
-Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 token);
+Int VirtQueue_addUsedBuf(VirtQueue_Handle vq, Int16 token, int len);
 
+#define ID_SYSM3_TO_A9      0
+#define ID_A9_TO_SYSM3      1
+
+#define CONSOLE_SYSM3_TO_A9 2
+#define CONSOLE_A9_TO_SYSM3 3
+
+#define RP_MSG_BUF_SIZE     (512)
 
 #if defined (__cplusplus)
 }
