@@ -31,6 +31,7 @@
  */
 
 #include <string.h>
+#include <stdio.h>
 
 #include <xdc/std.h>
 #include <xdc/runtime/System.h>
@@ -67,6 +68,7 @@ static void sendMessage(Char * name, UInt32 port, enum rpmsg_ns_flags flags)
 void NameMap_register(Char * name, UInt32 port)
 {
     System_printf("registering %s service on %d with HOST\n", name, port);
+    printf("registering %s service on %d with HOST\n", name, port);
     sendMessage(name, port, RPMSG_NS_CREATE);
 }
 

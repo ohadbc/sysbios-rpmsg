@@ -219,9 +219,11 @@ Int main(Int argc, char* argv[])
     UInt16 dstProc;
 
     System_printf("%s starting..\n", MultiProc_getName(MultiProc_self()));
+    printf("%s starting..\n", MultiProc_getName(MultiProc_self()));
 
 #if CORE0
     System_printf("%d resources at 0x%x\n", resources.num, resources);
+    printf("%d resources at 0x%x\n", resources.num, resources);
 #endif
 
     /* Plug vring interrupts, and spin until host handshake complete. */

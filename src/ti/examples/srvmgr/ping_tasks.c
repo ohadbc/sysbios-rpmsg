@@ -65,6 +65,7 @@ Void copyTaskFxn(UArg arg0, UArg arg1)
     Char                   *name;
 
     System_printf("copyTask %d: Entered...:\n", arg0);
+    printf("copyTask %d: Entered...:\n", arg0);
 
     dstProc = MultiProc_getId("HOST");
 
@@ -81,6 +82,8 @@ Void copyTaskFxn(UArg arg0, UArg arg1)
 
        buffer[len] = '\0';
        System_printf("copyTask %d: Received data: %s, len:%d\n", i + 1,
+                      buffer, len);
+       printf("copyTask %d: Received data: %s, len:%d\n", i + 1,
                       buffer, len);
 
        /* Send data back to remote endpoint: */
