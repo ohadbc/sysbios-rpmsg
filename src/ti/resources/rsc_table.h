@@ -84,10 +84,12 @@
 #define IPC_DA                  0xA0000000
 #define IPC_PA                  0xA9000000
 
-#define VRING0_DA               0xA0000000
-#define VRING1_DA               0xA0004000
-#define VRING2_DA               0xA0008000
-#define VRING3_DA               0xA000C000
+#define RPMSG_VRING0_DA               0xA0000000
+#define RPMSG_VRING1_DA               0xA0004000
+
+#define CONSOLE_VRING0_DA               0xA0008000
+#define CONSOLE_VRING1_DA               0xA000C000
+
 #define BUFS0_DA                0xA0040000
 #define BUFS1_DA                0xA0080000
 
@@ -95,10 +97,11 @@
  * sizes of the virtqueues (expressed in number of buffers supported,
  * and must be power of 2)
  */
-#define VQ0_SIZE                256
-#define VQ1_SIZE                256
-#define VQ2_SIZE                256
-#define VQ3_SIZE                256
+#define RPMSG_VQ0_SIZE                256
+#define RPMSG_VQ1_SIZE                256
+
+#define CONSOLE_VQ0_SIZE                256
+#define CONSOLE_VQ1_SIZE                256
 
 /* Size constants must match those used on host: include/asm-generic/sizes.h */
 #define SZ_1M                           0x00100000
@@ -119,13 +122,14 @@
 #  define TEXT_SIZE  (SZ_4M)
 
 /* virtio ids: keep in sync with the linux "include/linux/virtio_ids.h" */
+#define VIRTIO_ID_CONSOLE	3 /* virtio console */
 #define VIRTIO_ID_RPMSG		7 /* virtio remote processor messaging */
 
 /* Indices of rpmsg virtio features we support */
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
 
 /* flip up bits whose indices represent features we support */
-#define IPU_C0_FEATURES         1
+#define RPMSG_IPU_C0_FEATURES         1
 
 /* Resource info: Must match include/linux/remoteproc.h: */
 #define TYPE_CARVEOUT    0
@@ -178,12 +182,17 @@ struct fw_rsc_vdev {
 struct resource_table {
 	u32 version;
 	u32 num;
-	u32 offset[12];
+	u32 offset[13];
 
 	/* rpmsg vdev entry */
 	struct fw_rsc_vdev rpmsg_vdev;
 	struct fw_rsc_vdev_vring rpmsg_vring0;
 	struct fw_rsc_vdev_vring rpmsg_vring1;
+
+	/* console vdev entry */
+	struct fw_rsc_vdev console_vdev;
+	struct fw_rsc_vdev_vring console_vring0;
+	struct fw_rsc_vdev_vring console_vring1;
 
 	/* data carveout entry */
 	struct fw_rsc_carveout data_cout;
@@ -227,10 +236,11 @@ extern char * xdc_runtime_SysMin_Module_State_0_outbuf__A;
 
 struct resource_table resources = {
 	1, /* we're the first version that implements this */
-	12, /* number of entries in the table */
+	13, /* number of entries in the table */
 	/* offsets to entries */
 	{
 		offsetof(struct resource_table, rpmsg_vdev),
+		offsetof(struct resource_table, console_vdev),
 		offsetof(struct resource_table, data_cout),
 		offsetof(struct resource_table, text_cout),
 		offsetof(struct resource_table, trace),
@@ -247,12 +257,22 @@ struct resource_table resources = {
 	/* rpmsg vdev entry */
 	{
 		TYPE_VDEV,
-		VIRTIO_ID_RPMSG, IPU_C0_FEATURES, 0, 0, 0, 2, { 0, 0 },
+		VIRTIO_ID_RPMSG, RPMSG_IPU_C0_FEATURES, 0, 0, 0, 2, { 0, 0 },
 		/* no config data */
 	},
 	/* the two vrings */
-	{ VRING0_DA, 0, VQ0_SIZE },
-	{ VRING1_DA, 0, VQ1_SIZE },
+	{ RPMSG_VRING0_DA, 0, RPMSG_VQ0_SIZE },
+	{ RPMSG_VRING1_DA, 0, RPMSG_VQ1_SIZE },
+
+	/* console vdev entry */
+	{
+		TYPE_VDEV,
+		VIRTIO_ID_CONSOLE, 0, 0, 0, 0, 2, { 0, 0 },
+		/* no config data */
+	},
+	/* the two vrings */
+	{ CONSOLE_VRING0_DA, 0, CONSOLE_VQ0_SIZE },
+	{ CONSOLE_VRING1_DA, 0, CONSOLE_VQ1_SIZE },
 
 	{
 		TYPE_CARVEOUT, DATA_DA, 0, DATA_SIZE, 0, "IPU_MEM_DATA",
