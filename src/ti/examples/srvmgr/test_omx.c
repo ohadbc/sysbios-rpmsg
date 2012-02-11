@@ -217,6 +217,11 @@ Int main(Int argc, char* argv[])
 {
     RcmServer_Params  rcmServerParams;
     UInt16 dstProc;
+    int count = 300000;
+
+    /* temporary workaround: delay booting */
+    while (count--)
+	    System_printf("", count);
 
     System_printf("%s starting..\n", MultiProc_getName(MultiProc_self()));
     printf("%s starting..\n", MultiProc_getName(MultiProc_self()));
