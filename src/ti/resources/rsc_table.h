@@ -39,11 +39,8 @@
  *
  */
 
-
 #ifndef _RSC_TABLE_H_
 #define _RSC_TABLE_H_
-
-
 
 /* Ducati Memory Map: */
 #define L4_44XX_BASE            0x4a000000
@@ -143,6 +140,7 @@ struct fw_rsc_carveout {
 	u32 pa;
 	u32 len;
 	u32 flags;
+	u32 reserved;
 	char name[32];
 };
 
@@ -152,6 +150,7 @@ struct fw_rsc_devmem {
 	u32 pa;
 	u32 len;
 	u32 flags;
+	u32 reserved;
 	char name[32];
 };
 
@@ -159,13 +158,15 @@ struct fw_rsc_trace {
 	u32 type;
 	u32 da;
 	u32 len;
+	u32 reserved;
 	char name[32];
 };
 
 struct fw_rsc_vdev_vring {
-	u32 da;
-	u32 pa;
+	u32 da; /* device address */
+	u32 align;
 	u32 num;
+	u32 reserved;
 };
 
 struct fw_rsc_vdev {
@@ -182,6 +183,7 @@ struct fw_rsc_vdev {
 struct resource_table {
 	u32 version;
 	u32 num;
+	u32 reserved[2];
 	u32 offset[13];
 
 	/* rpmsg vdev entry */
@@ -237,6 +239,7 @@ extern char * xdc_runtime_SysMin_Module_State_0_outbuf__A;
 struct resource_table resources = {
 	1, /* we're the first version that implements this */
 	13, /* number of entries in the table */
+	0, 0, /* reserved, must be zero */
 	/* offsets to entries */
 	{
 		offsetof(struct resource_table, rpmsg_vdev),
@@ -261,8 +264,8 @@ struct resource_table resources = {
 		/* no config data */
 	},
 	/* the two vrings */
-	{ RPMSG_VRING0_DA, 0, RPMSG_VQ0_SIZE },
-	{ RPMSG_VRING1_DA, 0, RPMSG_VQ1_SIZE },
+	{ RPMSG_VRING0_DA, 4096, RPMSG_VQ0_SIZE, 0 },
+	{ RPMSG_VRING1_DA, 4096, RPMSG_VQ1_SIZE, 0 },
 
 	/* console vdev entry */
 	{
@@ -271,65 +274,65 @@ struct resource_table resources = {
 		/* no config data */
 	},
 	/* the two vrings */
-	{ CONSOLE_VRING0_DA, 0, CONSOLE_VQ0_SIZE },
-	{ CONSOLE_VRING1_DA, 0, CONSOLE_VQ1_SIZE },
+	{ CONSOLE_VRING0_DA, 4096, CONSOLE_VQ0_SIZE, 0 },
+	{ CONSOLE_VRING1_DA, 4096, CONSOLE_VQ1_SIZE, 0 },
 
 	{
-		TYPE_CARVEOUT, DATA_DA, 0, DATA_SIZE, 0, "IPU_MEM_DATA",
+		TYPE_CARVEOUT, DATA_DA, 0, DATA_SIZE, 0, 0, "IPU_MEM_DATA",
 	},
 
 	{
-		TYPE_CARVEOUT, TEXT_DA, 0, TEXT_SIZE, 0, "IPU_MEM_DATA",
+		TYPE_CARVEOUT, TEXT_DA, 0, TEXT_SIZE, 0, 0, "IPU_MEM_DATA",
 	},
 
 	{
-		TYPE_TRACE, TRACEBUFADDR, 0x8000, "trace:sysm3",
+		TYPE_TRACE, TRACEBUFADDR, 0x8000, 0, "trace:sysm3",
 	},
 
 	{
-		TYPE_DEVMEM, IPC_DA, IPC_PA, SZ_1M, 0, "IPU_MEM_IPC",
+		TYPE_DEVMEM, IPC_DA, IPC_PA, SZ_1M, 0, 0, "IPU_MEM_IPC",
 	},
 
 	{
 		TYPE_DEVMEM,
 		IPU_TILER_MODE_0_1, L3_TILER_MODE_0_1,
-		SZ_256M, 0, "IPU_TILER_MODE_0_1",
+		SZ_256M, 0, 0, "IPU_TILER_MODE_0_1",
 	},
 
 	{
 		TYPE_DEVMEM,
 		IPU_TILER_MODE_2, L3_TILER_MODE_2,
-		SZ_128M, 0, "IPU_TILER_MODE_2",
+		SZ_128M, 0, 0, "IPU_TILER_MODE_2",
 	},
 
 	{
 		TYPE_DEVMEM,
 		IPU_TILER_MODE_3, L3_TILER_MODE_3,
-		SZ_128M, 0, "IPU_TILER_MODE_3",
+		SZ_128M, 0, 0, "IPU_TILER_MODE_3",
 	},
 
 	{
 		TYPE_DEVMEM,
 		IPU_PERIPHERAL_L4CFG, L4_PERIPHERAL_L4CFG,
-		SZ_16M, 0, "IPU_PERIPHERAL_L4CFG",
+		SZ_16M, 0, 0, "IPU_PERIPHERAL_L4CFG",
 	},
 
 	{
 		TYPE_DEVMEM,
 		IPU_PERIPHERAL_L4PER, L4_PERIPHERAL_L4PER,
-		SZ_16M, 0, "IPU_PERIPHERAL_L4PER",
+		SZ_16M, 0, 0, "IPU_PERIPHERAL_L4PER",
 	},
 
 	{
 		TYPE_DEVMEM,
 		IPU_IVAHD_CONFIG, L3_IVAHD_CONFIG,
-		SZ_16M, 0, "IPU_IVAHD_CONFIG",
+		SZ_16M, 0, 0, "IPU_IVAHD_CONFIG",
 	},
 
 	{
 		TYPE_DEVMEM,
 		IPU_IVAHD_SL2, L3_IVAHD_SL2,
-		SZ_16M, 0, "IPU_IVAHD_SL2",
+		SZ_16M, 0, 0, "IPU_IVAHD_SL2",
 	},
 };
 
