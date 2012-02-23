@@ -166,12 +166,14 @@ struct fw_rsc_vdev_vring {
 	u32 da; /* device address */
 	u32 align;
 	u32 num;
+	u32 notifyid;
 	u32 reserved;
 };
 
 struct fw_rsc_vdev {
 	u32 type;
 	u32 id;
+	u32 notifyid;
 	u32 dfeatures;
 	u32 gfeatures;
 	u32 config_len;
@@ -259,23 +261,23 @@ struct resource_table resources = {
 
 	/* rpmsg vdev entry */
 	{
-		TYPE_VDEV,
-		VIRTIO_ID_RPMSG, RPMSG_IPU_C0_FEATURES, 0, 0, 0, 2, { 0, 0 },
+		TYPE_VDEV, VIRTIO_ID_RPMSG, 0,
+		RPMSG_IPU_C0_FEATURES, 0, 0, 0, 2, { 0, 0 },
 		/* no config data */
 	},
 	/* the two vrings */
-	{ RPMSG_VRING0_DA, 4096, RPMSG_VQ0_SIZE, 0 },
-	{ RPMSG_VRING1_DA, 4096, RPMSG_VQ1_SIZE, 0 },
+	{ RPMSG_VRING0_DA, 4096, RPMSG_VQ0_SIZE, 1, 0 },
+	{ RPMSG_VRING1_DA, 4096, RPMSG_VQ1_SIZE, 2, 0 },
 
 	/* console vdev entry */
 	{
-		TYPE_VDEV,
-		VIRTIO_ID_CONSOLE, 0, 0, 0, 0, 2, { 0, 0 },
+		TYPE_VDEV, VIRTIO_ID_CONSOLE, 3,
+		0, 0, 0, 0, 2, { 0, 0 },
 		/* no config data */
 	},
 	/* the two vrings */
-	{ CONSOLE_VRING0_DA, 4096, CONSOLE_VQ0_SIZE, 0 },
-	{ CONSOLE_VRING1_DA, 4096, CONSOLE_VQ1_SIZE, 0 },
+	{ CONSOLE_VRING0_DA, 4096, CONSOLE_VQ0_SIZE, 4, 0 },
+	{ CONSOLE_VRING1_DA, 4096, CONSOLE_VQ1_SIZE, 5, 0 },
 
 	{
 		TYPE_CARVEOUT, DATA_DA, 0, DATA_SIZE, 0, 0, "IPU_MEM_DATA",
