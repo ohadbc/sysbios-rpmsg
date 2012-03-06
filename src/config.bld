@@ -45,7 +45,7 @@ if (c6x_cgtools_rootdir != null) {
     /* Setup for C64T target */
     var C64T = xdc.useModule('ti.targets.elf.C64T');
     C64T.rootDir = c6x_cgtools_rootdir;
-    C64T.ccOpts.suffix += " -mi10 -mo ";
+    C64T.ccOpts.suffix += " -mi10 -mo -pds=71";
     C64T.lnkOpts.prefix += " -e=ti_sysbios_family_c64p_Hwi0";
     /* Set default platform and list of all interested platforms for c64T */
     C64T.platforms = ["ti.platform.omap4430.dsp"];
