@@ -90,6 +90,8 @@
 #define BUFS0_DA                0xA0040000
 #define BUFS1_DA                0xA0080000
 
+#define DUCATI_TO_TESLA_RPMSG_TX_VRING_DA 0x0
+
 /*
  * sizes of the virtqueues (expressed in number of buffers supported,
  * and must be power of 2)
@@ -124,15 +126,18 @@
 
 /* Indices of rpmsg virtio features we support */
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
+#define VIRTIO_RING_F_SYMMETRIC	30 /* We support symmetric vring */
 
 /* flip up bits whose indices represent features we support */
 #define RPMSG_IPU_C0_FEATURES         1
+#define DUCATI_TO_TESLA_RPMSG_FEATURES (1 << VIRTIO_RPMSG_F_NS || 1 << VIRTIO_RING_F_SYMMETRIC)
 
 /* Resource info: Must match include/linux/remoteproc.h: */
 #define TYPE_CARVEOUT    0
 #define TYPE_DEVMEM      1
 #define TYPE_TRACE       2
 #define TYPE_VDEV  3
+#define TYPE_EVDEV  4
 
 struct fw_rsc_carveout {
 	u32 type;
@@ -182,11 +187,53 @@ struct fw_rsc_vdev {
 	char reserved[2];
 };
 
+/*
+ * This is an extended vdev, which also indicates the
+ * id of the processors that will be communicating via
+ * this vdev.
+ *
+ * This target processor id is indicated by the new
+ * target_id field.
+ */
+struct fw_rsc_evdev {
+	u32 type;
+	u32 id;
+	u32 proc_id1;
+	u32 proc_id2;
+	u32 notify_id;
+	u32 features1;
+	u32 features2;
+	u32 config_len;
+	u32 reserved;
+	char status1;
+	char status2;
+	char num_of_vrings;
+	char padding;
+};
+
+/*
+ * this is an extended vring structure.
+ *
+ * it contains the device address of both subsystems,
+ * so communication can take place.
+ */
+#define EVDEV_MASTER_ALLOCATES_VRING 1
+struct fw_rsc_evdev_vring {
+	u32 da1; /* device address of subsystem1*/
+	u32 pa; /* physical address */
+	u32 da2; /* device address of subsystem2*/
+	u32 align;
+	u32 num;
+	u32 notify_id;
+	u32 flags;
+	u32 reserved;
+};
+
 struct resource_table {
 	u32 version;
 	u32 num;
 	u32 reserved[2];
-	u32 offset[13];
+	u32 offset[14];
 
 	/* rpmsg vdev entry */
 	struct fw_rsc_vdev rpmsg_vdev;
@@ -197,6 +244,15 @@ struct resource_table {
 	struct fw_rsc_vdev console_vdev;
 	struct fw_rsc_vdev_vring console_vring0;
 	struct fw_rsc_vdev_vring console_vring1;
+
+	/*
+	 * rpmsg evdev entry for ducati-tesla communication.
+	 *
+	 * this is going to be a symmetric vring vdev.
+	 */
+	struct fw_rsc_evdev rpmsg_tesla_vdev;
+	struct fw_rsc_evdev_vring rpmsg_tesla_tx_vring;
+	struct fw_rsc_evdev_vring rpmsg_tesla_rx_vring;
 
 	/* data carveout entry */
 	struct fw_rsc_carveout data_cout;
@@ -240,12 +296,13 @@ extern char * xdc_runtime_SysMin_Module_State_0_outbuf__A;
 
 struct resource_table resources = {
 	1, /* we're the first version that implements this */
-	13, /* number of entries in the table */
+	14, /* number of entries in the table */
 	0, 0, /* reserved, must be zero */
 	/* offsets to entries */
 	{
 		offsetof(struct resource_table, rpmsg_vdev),
 		offsetof(struct resource_table, console_vdev),
+		offsetof(struct resource_table, rpmsg_tesla_vdev),
 		offsetof(struct resource_table, data_cout),
 		offsetof(struct resource_table, text_cout),
 		offsetof(struct resource_table, trace),
@@ -278,6 +335,37 @@ struct resource_table resources = {
 	/* the two vrings */
 	{ CONSOLE_VRING0_DA, 4096, CONSOLE_VQ0_SIZE, 4, 0 },
 	{ CONSOLE_VRING1_DA, 4096, CONSOLE_VQ1_SIZE, 5, 0 },
+
+	/* ducati-to-tesla rpmsg evdev entry */
+	{
+		TYPE_EVDEV, VIRTIO_ID_RPMSG,
+		0, /* tesla proc_id */
+		1, /* ducati proc_id */
+		0, /* notify id */
+		0, /* tesla virtio features */
+		DUCATI_TO_TESLA_RPMSG_FEATURES, /* virtio features */
+		0, /* config len */
+		0, /* reserved */
+		0, /* tesla virtio status */
+		0, /* ducati virtio status */
+		2, /* number of vrings */
+		0, /* padding */
+	},
+
+	/* Tesla's TX vring */
+	{ 0, 0, 0, 0, 0, 1 /* notify id */, 0 ,0 }, /* (we don't know much about tesla's tx vring at this point */
+
+	/* Ducati's TX vring */
+	{
+		0, /* tesla da */
+		0, /* pa */
+		0, /* ducati da */
+		4096, /* alignment */
+		RPMSG_VQ0_SIZE, /* number of buffers */
+		2, /* notify id */
+		EVDEV_MASTER_ALLOCATES_VRING, /* let the master allocate the vring for us */
+		0, /* reserved */
+	},
 
 	{
 		TYPE_CARVEOUT, DATA_DA, 0, DATA_SIZE, 0, 0, "IPU_MEM_DATA",
