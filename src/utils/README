@@ -1,7 +1,0 @@
-This directory is experimental, and not built into the ducati-m3.bin coming
-from gollum releases.
-
-The BIOS image built from this directory is Version 2, and incompatible with
-remotproc loaders which load only BIOS image Version 1.
-
-See src/ti/resources/rsc_table.h.mmap for corresponding .resource_table format.
