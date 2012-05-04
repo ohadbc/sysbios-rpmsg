@@ -140,7 +140,9 @@ Void IpcPower_suspend()
  */
 Void IpcPower_idle()
 {
-    REG32(M3_SCR_REG) |= 1 << DEEPSLEEP_BIT;
+// TODO enable DEEPSLEEP bit only once we are using external GPT for OS tick,
+// otherwise the M3 can fall asleep and never wake up
+//    REG32(M3_SCR_REG) |= 1 << DEEPSLEEP_BIT;
     REG32(WUGEN_MEVT1) |= WUGEN_INT_MASK;
     asm(" wfi");
 }
