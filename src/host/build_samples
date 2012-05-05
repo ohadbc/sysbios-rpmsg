@@ -3,5 +3,7 @@
 arm-none-linux-gnueabi-gcc test_rpmsg_omx.c -o test_rpmsg_omx -lpthread
 arm-none-linux-gnueabi-gcc omx_sample.c -o omx_sample -lpthread
 arm-none-linux-gnueabi-gcc omx_benchmark.c -o omx_benchmark -lrt
+arm-none-linux-gnueabi-gcc rpmsg_proto.c -o rpmsg_proto
+arm-none-linux-gnueabi-gcc rpmsg_proto_bench.c -o rpmsg_proto_bench -lrt
 
 #cp -p omx_sample omx_benchmark /data/exports/gp/omap4_angstrom_rfs/virtio

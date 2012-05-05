@@ -78,6 +78,8 @@
 typedef struct MessageQCopy_Object {
     UInt32           queueId;      /* Unique id (procId | queueIndex)       */
     Semaphore_Handle semHandle;    /* I/O Completion                        */
+    MessageQCopy_callback cb;      /* MessageQ Callback */
+    UArg             arg;          /* Callback argument */
     List_Handle      queue;        /* Queue of pending messages             */
     Bool             unblocked;    /* Use with signal to unblock _receive() */
 } MessageQCopy_Object;
@@ -156,7 +158,7 @@ static Void MessageQCopy_swiFxn(UArg arg0, UArg arg1)
                    "to: 0x%x, dataLen: %d",
                   (IArg)msg->srcAddr, (IArg)msg->dstAddr, (IArg)msg->dataLen);
 
-        /* Pass to desitination queue (which is on this proc): */
+        /* Pass to desitination queue (on this proc), or callback: */
         MessageQCopy_send(dstProc, msg->dstAddr, msg->srcAddr,
                          (Ptr)msg->payload, msg->dataLen);
 
@@ -284,10 +286,13 @@ Void MessageQCopy_finalize()
 #undef FXNN
 
 /*
- *  ======== MessageQCopy_create ========
+ *  ======== MessageQCopy_createEx ========
  */
 #define FXNN "MessageQCopy_create"
-MessageQCopy_Handle MessageQCopy_create(UInt32 reserved, UInt32 * endpoint)
+MessageQCopy_Handle MessageQCopy_createEx(UInt32 reserved,
+                                        MessageQCopy_callback cb,
+                                        UArg arg,
+                                        UInt32 * endpoint)
 {
     MessageQCopy_Object    *obj = NULL;
     Bool                   found = FALSE;
@@ -295,8 +300,8 @@ MessageQCopy_Handle MessageQCopy_create(UInt32 reserved, UInt32 * endpoint)
     UInt16                 queueIndex = 0;
     IArg key;
 
-    Log_print2(Diags_ENTRY, "--> "FXNN": (reserved=%d, endpoint=0x%x)",
-                (IArg)reserved, (IArg)endpoint);
+    Log_print3(Diags_ENTRY, "--> "FXNN": (reserved=%d, cb=0x%x, endpoint=0x%x)",
+                (IArg)reserved, (IArg)cb, (IArg)endpoint);
 
     Assert_isTrue((curInit > 0) , NULL);
 
@@ -322,11 +327,18 @@ MessageQCopy_Handle MessageQCopy_create(UInt32 reserved, UInt32 * endpoint)
     if (found)  {
        obj = Memory_alloc(NULL, sizeof(MessageQCopy_Object), 0, NULL);
        if (obj != NULL) {
-           /* Allocate a semaphore to signal when messages received: */
-           obj->semHandle = Semaphore_create(0, NULL, NULL);
+           if (cb) {
+               /* Store callback and it's arg instead of semaphore: */
+               obj->cb = cb;
+               obj->arg= arg;
+           }
+           else {
+               /* Allocate a semaphore to signal when messages received: */
+               obj->semHandle = Semaphore_create(0, NULL, NULL);
 
-           /* Create our queue of to be received messages: */
-           obj->queue = List_create(NULL, NULL);
+               /* Create our queue of to be received messages: */
+               obj->queue = List_create(NULL, NULL);
+           }
 
            /* Store our endpoint, and object: */
            obj->queueId = queueIndex;
@@ -365,14 +377,20 @@ Int MessageQCopy_delete(MessageQCopy_Handle *handlePtr)
 
     if (handlePtr && (obj = (MessageQCopy_Object *)(*handlePtr)))  {
 
-       Semaphore_delete(&(obj->semHandle));
-
-       /* Free/discard all queued message buffers: */
-       while ((payload = (Queue_elem *)List_get(obj->queue)) != NULL) {
-           HeapBuf_free(module.heap, (Ptr)payload, MSGBUFFERSIZE);
+       if (obj->cb) {
+           obj->cb = NULL;
+           obj->arg= NULL;
        }
+       else {
+           Semaphore_delete(&(obj->semHandle));
 
-       List_delete(&(obj->queue));
+           /* Free/discard all queued message buffers: */
+           while ((payload = (Queue_elem *)List_get(obj->queue)) != NULL) {
+               HeapBuf_free(module.heap, (Ptr)payload, MSGBUFFERSIZE);
+           }
+
+           List_delete(&(obj->queue));
+       }
 
        /* Null out our slot: */
        key = GateSwi_enter(module.gateSwi);
@@ -410,6 +428,8 @@ Int MessageQCopy_recv(MessageQCopy_Handle handle, Ptr data, UInt16 *len,
                (IArg)len, (IArg)rplyEndpt, (IArg)timeout);
 
     Assert_isTrue((curInit > 0) , NULL);
+    /* A callback was set: client should not be calling this fxn! */
+    Assert_isTrue((!obj->cb), NULL);
 
     /* Check vring for pending messages before we block: */
     Swi_post(transport.swiHandle);
@@ -499,8 +519,6 @@ Int MessageQCopy_send(UInt16 dstProc,
         }
     }
     else {
-        /* Put on a Message queue on this processor: */
-
         /* Protect from MessageQCopy_delete */
         key = GateSwi_enter(module.gateSwi);
         obj = module.msgqObjects[dstEndpt];
@@ -513,26 +531,36 @@ Int MessageQCopy_send(UInt16 dstProc,
             return status;
         }
 
-        /* Allocate a buffer to copy the payload: */
-        size = len + sizeof(Queue_elem);
-
-        /* HeapBuf_alloc() is non-blocking, so needs protection: */
-        key = GateSwi_enter(module.gateSwi);
-        payload = (Queue_elem *)HeapBuf_alloc(module.heap, size, 0, NULL);
-        GateSwi_leave(module.gateSwi, key);
-
-        if (payload != NULL)  {
-            memcpy(payload->data, data, len);
-            payload->len = len;
-            payload->src = srcEndpt;
-
-            /* Put on the endpoint's queue and signal: */
-            List_put(obj->queue, (List_Elem *)payload);
-            Semaphore_post(obj->semHandle);
+        /* If callback registered, call it: */
+        if (obj->cb) {
+            Log_print2(Diags_INFO, FXNN": calling callback with data len: "
+                            "%d, from: %d\n", len, srcEndpt);
+            obj->cb(obj, obj->arg, data, len, srcEndpt);
         }
         else {
-            status = MessageQCopy_E_MEMORY;
-            Log_print0(Diags_STATUS, FXNN": HeapBuf_alloc failed!");
+            /* else, put on a Message queue on this processor: */
+
+            /* Allocate a buffer to copy the payload: */
+            size = len + sizeof(Queue_elem);
+
+            /* HeapBuf_alloc() is non-blocking, so needs protection: */
+            key = GateSwi_enter(module.gateSwi);
+            payload = (Queue_elem *)HeapBuf_alloc(module.heap, size, 0, NULL);
+            GateSwi_leave(module.gateSwi, key);
+
+            if (payload != NULL)  {
+                memcpy(payload->data, data, len);
+                payload->len = len;
+                payload->src = srcEndpt;
+
+                /* Put on the endpoint's queue and signal: */
+                List_put(obj->queue, (List_Elem *)payload);
+                Semaphore_post(obj->semHandle);
+            }
+            else {
+                status = MessageQCopy_E_MEMORY;
+                Log_print0(Diags_STATUS, FXNN": HeapBuf_alloc failed!");
+            }
         }
     }
 
@@ -550,6 +578,8 @@ Void MessageQCopy_unblock(MessageQCopy_Handle handle)
     MessageQCopy_Object *obj = (MessageQCopy_Object *)handle;
 
     Log_print1(Diags_ENTRY, "--> "FXNN": (handle=0x%x)", (IArg)handle);
+
+    Assert_isTrue((!obj->cb), NULL);
 
     /* Set instance to 'unblocked' state, and post */
     obj->unblocked = TRUE;
