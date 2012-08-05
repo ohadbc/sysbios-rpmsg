@@ -124,9 +124,10 @@
 
 /* Indices of rpmsg virtio features we support */
 #define VIRTIO_RPMSG_F_NS	0 /* RP supports name service notifications */
+#define VIRTIO_RPMSG_F_STA_CHS	1 /* RP has static channels in config space */
 
 /* flip up bits whose indices represent features we support */
-#define RPMSG_IPU_C0_FEATURES         1
+#define RPMSG_IPU_C0_FEATURES         3
 
 /* Resource info: Must match include/linux/remoteproc.h: */
 #define TYPE_CARVEOUT    0
@@ -182,6 +183,31 @@ struct fw_rsc_vdev {
 	char reserved[2];
 };
 
+#define RPMSG_NAME_SIZE                 32
+#define RPMSG_ADDR_ANY          0xFFFFFFFF
+
+/**
+ * struct rpmsg_channel_desc - static channel descriptor
+ * @name: name of remote service that is published
+ * @src: source (local) address
+ * @dst: destination (remote) address
+ * @flags: channel flags
+ * @reserved: currently unused (must be zero)
+ *
+ * This structure contains a descriptor for a static rpmsg channel.
+ * Namely, it holds the src and dst addresses of a channel, possibly
+ * with some flags, and is being used to synchronize about static
+ * channels (via the resource table). The rpmsg bus will access it
+ * via the virtio config space.
+ */
+struct rpmsg_channel_desc {
+        char name[RPMSG_NAME_SIZE];
+        u32 src;
+        u32 dst;
+        u32 flags;
+        u32 reserved;
+};
+
 struct resource_table {
 	u32 version;
 	u32 num;
@@ -192,6 +218,7 @@ struct resource_table {
 	struct fw_rsc_vdev rpmsg_vdev;
 	struct fw_rsc_vdev_vring rpmsg_vring0;
 	struct fw_rsc_vdev_vring rpmsg_vring1;
+	struct rpmsg_channel_desc sta_ch;
 
 	/* console vdev entry */
 	struct fw_rsc_vdev console_vdev;
@@ -262,12 +289,15 @@ struct resource_table resources = {
 	/* rpmsg vdev entry */
 	{
 		TYPE_VDEV, VIRTIO_ID_RPMSG, 0,
-		RPMSG_IPU_C0_FEATURES, 0, 0, 0, 2, { 0, 0 },
+		RPMSG_IPU_C0_FEATURES, 0,
+		sizeof(struct rpmsg_channel_desc), /* config len */
+		0, 2, { 0, 0 },
 	},
 	/* the two vrings */
 	{ RPMSG_VRING0_DA, 4096, RPMSG_VQ0_SIZE, 1, 0 },
 	{ RPMSG_VRING1_DA, 4096, RPMSG_VQ1_SIZE, 2, 0 },
-	/* no config data */
+	/* a single static channel */
+	{ "rpmsg-server-sample", RPMSG_ADDR_ANY, 90, 0, 0 },
 
 	/* console vdev entry */
 	{
