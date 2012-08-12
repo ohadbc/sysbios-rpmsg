@@ -193,6 +193,7 @@ struct fw_rsc_vdev {
  * @dst: destination (remote) address
  * @flags: channel flags
  * @reserved: currently unused (must be zero)
+ * @priv_len: length (in bytes) of private data for this channel
  *
  * This structure contains a descriptor for a static rpmsg channel.
  * Namely, it holds the src and dst addresses of a channel, possibly
@@ -206,6 +207,16 @@ struct rpmsg_channel_desc {
         u32 dst;
         u32 flags;
         u32 reserved;
+	u32 priv_len;
+};
+
+struct virtio_rpmsg_config {
+        u32 sta_chs_hdr_offset;
+        u32 sta_chs_hdr_length;
+};
+
+struct virtio_rpmsg_sta_chs_hdr {
+        u32 sta_chs_num;
 };
 
 struct resource_table {
@@ -218,7 +229,12 @@ struct resource_table {
 	struct fw_rsc_vdev rpmsg_vdev;
 	struct fw_rsc_vdev_vring rpmsg_vring0;
 	struct fw_rsc_vdev_vring rpmsg_vring1;
-	struct rpmsg_channel_desc sta_ch;
+	/* rpmsg config space */
+	struct virtio_rpmsg_config rpmsg_config_hdr;
+	struct virtio_rpmsg_sta_chs_hdr rpmsg_config_sta_chs_hdr;
+        u32 rpmsg_single_sta_chs_offset;
+	struct rpmsg_channel_desc rpmsg_demo_sta_ch;
+	char rpmsg_channel_desc_priv_data[5];
 
 	/* console vdev entry */
 	struct fw_rsc_vdev console_vdev;
@@ -290,14 +306,33 @@ struct resource_table resources = {
 	{
 		TYPE_VDEV, VIRTIO_ID_RPMSG, 0,
 		RPMSG_IPU_C0_FEATURES, 0,
-		sizeof(struct rpmsg_channel_desc), /* config len */
+		/* config len */
+		offsetof(struct resource_table, console_vdev) -
+			offsetof(struct resource_table, rpmsg_config_hdr),
 		0, 2, { 0, 0 },
 	},
 	/* the two vrings */
 	{ RPMSG_VRING0_DA, 4096, RPMSG_VQ0_SIZE, 1, 0 },
 	{ RPMSG_VRING1_DA, 4096, RPMSG_VQ1_SIZE, 2, 0 },
-	/* a single static channel */
-	{ "rpmsg-server-sample", RPMSG_ADDR_ANY, 90, 0, 0 },
+	/* rpmsg's virtio config space starts here */
+	{
+		/* offset to the static channels header */
+		offsetof(struct resource_table, rpmsg_config_sta_chs_hdr) -
+			 offsetof(struct resource_table, rpmsg_config_hdr),
+
+		/* size of the static channels header */
+		offsetof(struct resource_table, rpmsg_demo_sta_ch) -
+		offsetof(struct resource_table, rpmsg_config_sta_chs_hdr),
+	},
+	/* here goes the static channels header */
+	{ 1 }, /* a single static channel follows */
+	/* offsets to channels */
+	offsetof(struct resource_table, rpmsg_demo_sta_ch) -
+			 offsetof(struct resource_table, rpmsg_config_hdr),
+	/* first static channel */
+	{ "rpmsg-server-sample", RPMSG_ADDR_ANY, 90, 0, 0, 5, },
+	{ 'B', 'E', 'E', 'F', '\n' }, /* channel-specific private data */
+	/* end of rpmsg vdev entry */
 
 	/* console vdev entry */
 	{
